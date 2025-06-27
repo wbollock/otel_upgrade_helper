@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenTelemetry Collector Release Notes Comparator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Add Fuse.js for fuzzy search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>OpenTelemetry Collector Release Notes Comparator</h1>
+        <div class="controls">
+            <label>Project:
+                <select id="project-select">
+                    <option value="otelcol">opentelemetry-collector</option>
+                    <option value="otelcol-contrib">opentelemetry-collector-contrib</option>
+                </select>
+            </label>
+            <label>From Version:
+                <select id="from-version"></select>
+            </label>
+            <label>To Version:
+                <select id="to-version"></select>
+            </label>
+            <!-- Replace single component select with multi-select and search -->
+            <label for="component-filter">Component(s):
+                <input type="text" id="component-search" placeholder="Search components..." autocomplete="off" style="margin-bottom:0.5em;">
+                <select id="component-filter" multiple size="6" style="min-width:220px;"></select>
+            </label>
+            <button id="compare-btn">Compare</button>
+        </div>
+        <div id="results"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
