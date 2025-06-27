@@ -21,6 +21,11 @@
         <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib" target="_blank" rel="noopener noreferrer">opentelemetry-collector-contrib repo</a>
       </p>
     </div>
+    <div id="config-paste-block" style="text-align:center;margin-bottom:1.5em;">
+      <textarea id="otel-config-paste" rows="3" placeholder="Paste your otelcol YAML config here to auto-select components..." style="width:90%;max-width:600px;padding:0.7em 1em;border-radius:8px;border:1px solid #bbb;font-size:1em;"></textarea><br>
+      <button type="button" id="detect-components-btn" style="margin-top:0.5em;padding:0.5em 1.2em;border-radius:6px;font-size:1em;background:#ececf6;border:1px solid #bbb;">Detect Components</button>
+      <span id="detect-components-status" style="margin-left:1em;color:#6a3fc7;font-size:0.98em;"></span>
+    </div>
     <form class="controls" style="gap:2.2rem;align-items:flex-end;flex-wrap:wrap;">
       <div style="display:flex;flex-direction:column;gap:0.5em;min-width:180px;">
         <label for="project-select">Project:
