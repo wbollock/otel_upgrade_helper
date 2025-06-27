@@ -1,13 +1,11 @@
-module github.com/yourusername/otel-upgrade-helper
+module github.com/wbollock/otel-upgrade-helper
 
-go 1.21
+go 1.24.0
 
 require (
 	github.com/google/go-github/v50 v50.2.0
 	golang.org/x/oauth2 v0.18.0 // for GitHub API auth (optional)
 )
-
-require github.com/google/go-github/v55 v55.0.0
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect

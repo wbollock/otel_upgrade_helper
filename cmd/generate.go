@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-github/v50/github"
 	"golang.org/x/oauth2"
 
-	releasenotes "github.com/yourusername/otel-upgrade-helper/internal/releasenotes"
+	releasenotes "github.com/wbollock/otel-upgrade-helper/internal/releasenotes"
 )
 
 func main() {
