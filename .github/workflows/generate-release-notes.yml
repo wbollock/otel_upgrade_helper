@@ -23,6 +23,9 @@ jobs:
       - name: Generate static site
         run: go run ./cmd/generate.go
 
+      - name: Add .nojekyll
+        run: touch docs/.nojekyll
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
