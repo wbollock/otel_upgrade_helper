@@ -76,7 +76,101 @@ document.addEventListener('DOMContentLoaded', function() {
                         componentsToShow.forEach(c => {
                             // Fix typo in display as well
                             const displayC = c.replace(/reciver/g, 'receiver');
-                            const notesArr = notesData[c] || [];
+                            let notesArr = notesData[c] || [];
+                            // Deduplicate notes
+                            notesArr = Array.from(new Set(notesArr));
+                            if (notesArr.length) {
+                                notesFound = true;
+                                notesHtml += `<h4 class="component-name">${displayC}</h4><ul class="notes-list">` + notesArr.map(n => `<li>${linkifyPRs(n, project)}</li>`).join('') + '</ul>';
+                            }
+                        });
+                        if (notesFound) {
+                            results.push(`<div class="release-block"><h3 class="version-header">${ver}</h3>${notesHtml}</div>`);
+                        }
+                    });
+                }
+                resultsDiv.innerHTML = results.length ? results.join('') : '<em>No upgrade notes found for selection.</em>';
+            });
+
+            // Helper to linkify PR numbers in note text
+            function linkifyPRs(note, project) {
+                // Match #12345 not already inside a link
+                return note.replace(/#(\d{3,7})(?![\w\d]*\])/g, function(match, prNum) {
+                    let repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
+                    let url = `https://github.com/${repo}/pull/${prNum}`;
+                    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+                });
+            }
+
+            // Helper: parse query params
+            function getQueryParams() {
+                const params = {};
+                window.location.search.replace(/\??([^=&]+)=([^&]*)/g, function(_, k, v) {
+                    params[decodeURIComponent(k)] = decodeURIComponent(v);
+                });
+                return params;
+            }
+            // Helper: update query params in URL
+            function setQueryParams(params) {
+                const q = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+                history.replaceState(null, '', '?' + q);
+            }
+
+            // On load, set selects from URL if present
+            const params = getQueryParams();
+            if (params.project) projectSelect.value = params.project;
+            updateVersions();
+            if (params.from) fromVersion.value = params.from;
+            if (params.to) toVersion.value = params.to;
+            updateComponents();
+            if (params.component) componentFilter.value = params.component;
+
+            // When any select changes, update URL
+            function updateUrlFromUI() {
+                setQueryParams({
+                    project: projectSelect.value,
+                    from: fromVersion.value,
+                    to: toVersion.value,
+                    component: componentFilter.value
+                });
+            }
+            projectSelect.addEventListener('change', () => { updateVersions(); updateUrlFromUI(); });
+            fromVersion.addEventListener('change', () => { updateComponents(true); updateUrlFromUI(); });
+            toVersion.addEventListener('change', () => { updateComponents(true); updateUrlFromUI(); });
+            componentFilter.addEventListener('change', updateUrlFromUI);
+
+            // Also update URL on compare
+            document.getElementById('compare-btn').addEventListener('click', function() {
+                updateUrlFromUI();
+                const project = projectSelect.value;
+                const from = fromVersion.value;
+                const to = toVersion.value;
+                const component = componentFilter.value;
+                let results = [];
+                if (data[project]) {
+                    // Get all versions between from and to (inclusive, sorted)
+                    const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+                    const fromIdx = versions.indexOf(from);
+                    const toIdx = versions.indexOf(to);
+                    if (fromIdx === -1 || toIdx === -1) {
+                        resultsDiv.innerHTML = '<em>Invalid version selection.</em>';
+                        return;
+                    }
+                    const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+                    const selectedVersions = versions.slice(start, end + 1);
+                    // For each version, show notes for the selected component(s)
+                    selectedVersions.forEach(ver => {
+                        const notesData = data[project][ver] || {};
+                        let componentsToShow = component === 'all' ? Object.keys(notesData) : [component];
+                        componentsToShow = componentsToShow.filter(c => c && c !== '');
+                        let notesFound = false;
+                        let notesHtml = '';
+                        componentsToShow.forEach(c => {
+                            // Fix typo in display as well
+                            const displayC = c.replace(/reciver/g, 'receiver');
+                            let notesArr = notesData[c] || [];
+                            // Deduplicate notes
+                            notesArr = Array.from(new Set(notesArr));
                             if (notesArr.length) {
                                 notesFound = true;
                                 notesHtml += `<h4 class="component-name">${displayC}</h4><ul class="notes-list">` + notesArr.map(n => `<li>${linkifyPRs(n, project)}</li>`).join('') + '</ul>';
