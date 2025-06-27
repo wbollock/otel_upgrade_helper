@@ -43,3 +43,44 @@ select, button {
     padding: 1rem;
     min-height: 100px;
 }
+.release-block {
+    background: #f5f8fa;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.version-header {
+    margin-top: 0;
+    color: #2d3a4a;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin-bottom: 0.5rem;
+}
+.component-name {
+    color: #4a5a6a;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.2rem;
+    margin-bottom: 0.2rem;
+}
+.notes-list {
+    margin-top: 0.2rem;
+    margin-bottom: 1rem;
+    padding-left: 1.2rem;
+    color: #222;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+.notes-list li {
+    margin-bottom: 0.3rem;
+    background: #fff;
+    border-radius: 4px;
+    padding: 0.4em 0.7em;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    border-left: 4px solid #b3c6e0;
+}
+.notes-list li:has(.emoji) {
+    border-left-color: #f7b731;
+}

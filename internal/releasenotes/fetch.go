@@ -26,6 +26,28 @@ func FetchReleaseNotes(ctx context.Context, client *github.Client, owner, repo s
 	return notes, nil
 }
 
+// correctComponentName attempts to fix common typos in component names
+func correctComponentName(name string) string {
+	typoMap := map[string]string{
+		"reciver":    "receiver",
+		"exproter":   "exporter",
+		"procesor":   "processor",
+		"proccessor": "processor",
+		"proccesser": "processor",
+		"proccess":   "process",
+		"reciever":   "receiver",
+		"recivers":   "receivers",
+		"exporer":    "exporter",
+		"expoter":    "exporter",
+		"extention":  "extension",
+		// Add more as needed
+	}
+	for typo, fix := range typoMap {
+		name = strings.ReplaceAll(name, typo, fix)
+	}
+	return name
+}
+
 // ParseUpgradeNotes parses the release body and extracts upgrade notes by component
 // Returns a map of component -> []notes
 func ParseUpgradeNotes(releaseBody string) map[string][]string {
@@ -37,15 +59,39 @@ func ParseUpgradeNotes(releaseBody string) map[string][]string {
 		if strings.HasPrefix(line, "- `") {
 			endIdx := strings.Index(line[3:], "`")
 			if endIdx > 0 {
-				currentComponent = line[3 : 3+endIdx]
+				currentComponent = correctComponentName(line[3 : 3+endIdx])
 				note := strings.TrimSpace(line[3+endIdx+1:])
+				if strings.HasPrefix(note, ":") {
+					note = strings.TrimSpace(note[1:])
+				}
+				note = highlightEmojis(note)
 				if note != "" {
 					result[currentComponent] = append(result[currentComponent], note)
 				}
 			}
 		}
+		// Also collect top-level breaking changes and bugfixes (not tied to a component)
+		if strings.HasPrefix(line, "- ") && !strings.HasPrefix(line, "- `") {
+			note := strings.TrimPrefix(line, "- ")
+			note = highlightEmojis(note)
+			if note != "" {
+				result["(general)"] = append(result["(general)"], note)
+			}
+		}
 	}
 	return result
+}
+
+// highlightEmojis adds emojis for breaking changes and bugfixes
+func highlightEmojis(note string) string {
+	lower := strings.ToLower(note)
+	if strings.Contains(lower, "breaking") {
+		note = "🚨⚠️ " + note
+	}
+	if strings.Contains(lower, "bug") || strings.Contains(lower, "fix") {
+		note = "🐞 " + note
+	}
+	return note
 }
 
 // min returns the smaller of two ints
