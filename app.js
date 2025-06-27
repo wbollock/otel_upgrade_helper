@@ -278,5 +278,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('dark-mode', isDark ? '1' : '0');
                 userDarkPref = isDark ? '1' : '0';
             });
+
+            // --- Detect components from pasted otel config ---
+            const detectBtn = document.getElementById('detect-components-btn');
+            const configPaste = document.getElementById('otel-config-paste');
+            const detectStatus = document.getElementById('detect-components-status');
+            detectBtn.addEventListener('click', function() {
+                const text = configPaste.value;
+                if (!text.trim()) {
+                    detectStatus.textContent = 'Paste a config first.';
+                    return;
+                }
+                // Find lines like: receivers: ... receiver_name:, exporters: ... exporter_name:
+                // Simple regex: match lines with 'receivers:', 'exporters:', 'processors:', 'extensions:' and their children
+                const componentRegex = /^(\s*)([\w\-\.]+):/gm;
+                const found = new Set();
+                let section = '';
+                text.split(/\r?\n/).forEach(line => {
+                    const trimmed = line.trim();
+                    if (/^(receivers|exporters|processors|extensions):\s*$/.test(trimmed)) {
+                        section = trimmed.replace(':','');
+                    } else if (section && /^([\w\-\.]+):/.test(trimmed)) {
+                        const match = trimmed.match(/^([\w\-\.]+):/);
+                        if (match) found.add(match[1]);
+                    }
+                });
+                // Try to match to available components (fuzzy: startsWith or contains)
+                const options = Array.from(componentFilter.options);
+                let matched = [];
+                found.forEach(name => {
+                    // Try exact, then startsWith, then contains
+                    let opt = options.find(o => o.value === name);
+                    if (!opt) opt = options.find(o => o.value.startsWith(name));
+                    if (!opt) opt = options.find(o => o.value.includes(name));
+                    if (opt) {
+                        opt.selected = true;
+                        matched.push(opt.value);
+                    }
+                });
+                detectStatus.textContent = matched.length ? `Selected: ${matched.join(', ')}` : 'No components detected.';
+                componentFilter.dispatchEvent(new Event('change'));
+            });
         });
 });
