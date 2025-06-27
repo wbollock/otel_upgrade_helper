@@ -1,0 +1,551 @@
+OpenTelemetry Collector Release Notes Comparator Static Site Generator
+
+==== v0.128.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.128.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `service/telemetry`: Mark "telemetry.disableAddressFieldForInternalTelemetry" as stable (#13152)
+
+### 💡 Enhancements �
+
+==== v0.127.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.127.0
+
+## End User Changelog
+
+### 🚩 Deprecations 🚩
+
+- `semconv`: Deprecating the semconv package in favour of go.opentelemetry.io/otel/semconv (#13012)
+
+### 💡 Enhancements 💡
+
+
+
+==== v0.126.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.126.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `configauth`: Removes deprecated `configauth.Authentication` and `extensionauthtest.NewErrorClient` (#12992)
+  The followin
+
+==== v0.125.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.125.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `service`: Lowercase values for 'otelcol.component.kind' attributes. (#12865)
+- `service`: Restrict the `telemetry.newPipel
+
+==== v0.124.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.124.0
+
+## End User Changelog
+
+### 🐛 Known bugs 🐛
+
+- `service/telemetry`: Missing attributes in internal Collector logs (#12870).
+  - See issue description for workarounds.
+
+
+==== v0.123.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.123.0
+
+## End User Changelog
+
+
+### ❗ Known Issues ❗
+
+- This version increases memory usage by ~0.5 MB per component in the pipelines because a separate Zap Core logger is 
+  i
+
+==== v0.122.1 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.122.1
+
+## End User Changelog
+
+### 🧰 Bug fixes 🧰
+
+- `confmap`: Ensure slices with defaults containing struct values are correctly set. (#12661)
+  This reverts the changes made in htt
+
+==== v0.122.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.122.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `service`: Batch processor telemetry is no longer emitted at "basic" verbosity level (#7890)
+  According to the guid
+
+==== v0.121.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.121.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `confighttp`: Make the client config options `max_idle_conns`, `max_idle_conns_per_host`, `max_conns_per_host`, and `
+
+==== v0.120.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.120.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `all`: Added support for go1.24, bumped minimum version to 1.23 (#12370)
+- `mdatagen`: Removing deprecated generated
+
+==== v0.119.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.119.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `exporterhelper`: Rename exporter span signal specific attributes (e.g. "sent_spans" / "send_failed_span") to "items.
+
+==== v0.118.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.118.0
+
+## End User Changelog
+
+### 💡 Enhancements 💡
+
+- `exporterhelper`: Add blocking option to control queue behavior when full (#12090)
+- `debugexporter`: Add EventName to d
+
+==== v0.117.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.117.0
+
+## End User Changelog
+
+## v1.23.0/v0.117.0
+
+### 🛑 Breaking changes 🛑
+
+- `otelcol`: Remove warnings when 0.0.0.0 is used (#11713, #8510)
+
+### 🧰 Bug fixes 🧰
+
+
+
+==== v0.116.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.116.0
+
+## End User Changelog
+
+## v1.22.0/v0.116.0
+
+### 🛑 Breaking changes 🛑
+
+- `pdata/pprofile`: Remove deprecated `Profile.EndTime` and `Profile.SetEndTime` methods. (#1179
+
+==== v0.115.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.115.0
+
+## End User Changelog
+
+## v1.21.0/v0.115.0
+
+### 🛑 Breaking changes 🛑
+
+- `otelcol`: Change all logged timestamps to ISO8601. (#10543)
+  This makes log timestamps huma
+
+==== v0.114.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.114.0
+
+## End User Changelog
+
+## v1.20.0/v0.114.0
+
+### 💡 Enhancements 💡
+
+- `cmd/builder`: Allow for replacing of local Providers and Converters when building custom collecto
+
+==== v0.113.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.113.0
+
+## End User Changelog
+
+## v1.19.0/v0.113.0
+
+### 🛑 Breaking changes 🛑
+
+- `internal/fanoutconsumer`: Extract internal/fanoutconsumer as a separate go module (#11441)
+-
+
+==== v0.112.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.112.0
+
+## End User Changelog
+
+## v1.18.0/v0.112.0
+
+### 🛑 Breaking changes 🛑
+
+- `consumer/consumererror`: Extract consumer/consumererror as a separate go module (#11440)
+- `
+
+==== v0.111.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.111.0
+
+:new: The binary release adds a new [OTLP-only distro](https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol-otlp#opentelemetry-colle
+
+==== v0.110.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.110.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `processorhelper`: Update incoming/outgoing metrics to a single metric with a `otel.signal` attributes. (#11144)
+  T
+
+==== v0.109.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.109.0
+
+## End User Changelog
+
+### 🐛 Known bugs 🐛
+
+- The `ocb` binary has an identified bug caused by the fact that some of the providers have been marked stable and the defaul
+
+==== v0.108.1 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.108.0
+
+## End User Changelog
+
+### 🧰 Bug fixes 🧰
+
+- `mdatagen`: Fix a missing import in the generated test file (#10969)
+
+==== v0.108.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.108.0
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `all`: Added support for go1.23, bumped the minimum version to 1.22 (#10869)
+- `otelcol`: Remove deprecated `Confmap
+
+==== v0.107.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.107.0
+
+## End User Changelog
+
+## v1.13.0/v0.107.0
+
+### 🛑 Breaking changes 🛑
+
+- `service`: Remove OpenCensus bridge completely, mark feature gate as stable. (#10414)
+- `conf
+
+==== v0.106.1 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.106.1
+
+## End User Changelog
+
+## v0.106.1
+
+### 🧰 Bug fixes 🧰
+
+- `configauth`: Fix unmarshaling of authentication in HTTP servers. (#10750)
+
+==== cmd/builder/v0.106.1 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.106.1
+
+
+
+
+==== v0.106.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.106.0
+
+## End User Changelog
+
+## v0.106.0
+
+### 🛑 Breaking changes 🛑
+
+- `service`: Update all metrics to include `otelcol_` prefix to ensure consistency across OTLP and Prome
+
+==== cmd/builder/v0.106.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.106.0
+
+
+
+
+==== v0.105.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.105.0
+
+## End User Changelog
+
+## v1.12.0/v0.105.0
+
+### 🛑 Breaking changes 🛑
+
+- `service`: add `service.disableOpenCensusBridge` feature gate which is enabled by default to r
+
+==== cmd/builder/v0.105.0 ===
+### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.105.0
+
+
+
+
+==== v0.128.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.128.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `pkg`: Remove
+
+==== v0.127.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.127.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `sqlserverrec
+
+==== v0.126.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.126.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `pkg`: 
+
+==== v0.125.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.125.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `awscloudwatc
+
+==== v0.124.1 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.124.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.124.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.124.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.123.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.122.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.122.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.122.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.121.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.121.0), be sure to check the release notes there as well.
+
+## End user changelog
+
+### 🛑 Breaking changes 🛑
+
+- `teleme
+
+==== v0.120.1 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.120.1), be sure to check the release notes there as well.
+
+## End user changelog
+
+### 🧰 Bug fixes 🧰
+
+- `receiver/prom
+
+==== v0.120.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.120.0), be sure to check the release notes there as well.
+
+## End user changelog
+
+### 🛑 Breaking changes 🛑
+
+- `receiv
+
+==== v0.119.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.119.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.118.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.118.0), be sure to check the release notes there as well.
+
+## End user changelog
+
+### 🐛 Known bugs 🐛
+
+- `connector/ro
+
+==== v0.117.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.117.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.116.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.116.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.115.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.115.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.114.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.114.0), be sure to check the release notes there as well.
+
+## Unmaintained Components
+
+These components are marked as [Unmain
+
+==== v0.113.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.113.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+## v0.113.0
+
+### 🛑 Breaking changes �
+
+==== v0.112.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.112.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `elasti
+
+==== v0.111.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.111.0), be sure to check the release notes there as well.
+
+:new: The binary release adds a new [OTLP-only distro](https://githu
+
+==== v0.110.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.110.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `pkg/st
+
+==== v0.109.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.109.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `clickh
+
+==== v0.108.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.108.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `all`: 
+
+==== v0.107.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.107.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+## v0.107.0
+
+This release fixes CVE-2024-
+
+==== v0.106.1 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.106.1), be sure to check the release notes there as well.
+
+## End User Changelog
+
+## v0.106.1
+
+### 🧰 Bug fixes 🧰
+
+-
+
+==== v0.106.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.106.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+## v0.106.0
+
+### 🛑 Breaking changes �
+
+==== v0.105.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.105.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+## v0.105.0
+
+### 🛑 Breaking changes �
+
+==== v0.104.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.104.0), be sure to check the release notes there as well.
+
+:warning: **The [Core repository's release](https://github.com/open-
+
+==== v0.103.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.103.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `cmd/op
+
+==== v0.102.0 ===
+The OpenTelemetry Collector Contrib contains everything in the [opentelemetry-collector release](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.102.0), be sure to check the release notes there as well.
+
+## End User Changelog
+
+### 🛑 Breaking changes 🛑
+
+- `k8satt
+Generated docs/data/release_notes.json
