@@ -121,10 +121,11 @@ body.dark .component-name {
 .notes-list {
     margin-top: 0.2rem;
     margin-bottom: 1rem;
-    padding-left: 1.2rem;
+    padding-left: 0;
     color: #222;
     font-size: 1rem;
     line-height: 1.6;
+    list-style: none;
 }
 body.dark .notes-list {
     color: #e6e6ea;
@@ -133,21 +134,27 @@ body.dark .notes-list {
     margin-bottom: 0.3rem;
     background: #fff;
     border-radius: 4px;
-    padding: 0.4em 0.7em;
+    padding: 0.4em 0.7em 0.4em 2em;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     border-left: 4px solid #b3c6e0;
-    transition: background 0.3s, color 0.3s, border 0.3s;
+    position: relative;
+}
+.notes-list li::before {
+    content: "\2022";
+    color: #6a3fc7;
+    font-size: 1.2em;
+    position: absolute;
+    left: 0.8em;
+    top: 0.35em;
+    line-height: 1;
 }
 body.dark .notes-list li {
     background: #23262b;
     color: #e6e6ea;
     border-left: 4px solid #6a3fc7;
 }
-.notes-list li:has(.emoji) {
-    border-left-color: #f7b731;
-}
-body.dark .notes-list li:has(.emoji) {
-    border-left-color: #ffe066;
+body.dark .notes-list li::before {
+    color: #ffe066;
 }
 #dark-mode-toggle {
     background: #fff;
