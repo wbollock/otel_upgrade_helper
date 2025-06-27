@@ -1,38 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenTelemetry Collector Release Notes Comparator</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Add Fuse.js for fuzzy search -->
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenTelemetry Collector Release Notes Comparator</title>
+  <!-- Favicon: OpenTelemetry logo emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🟣</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <!-- Add Fuse.js for fuzzy search -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <h1>OpenTelemetry Collector Release Notes Comparator</h1>
-        <div class="controls">
-            <label>Project:
-                <select id="project-select">
-                    <option value="otelcol">opentelemetry-collector</option>
-                    <option value="otelcol-contrib">opentelemetry-collector-contrib</option>
-                </select>
-            </label>
-            <label>From Version:
-                <select id="from-version"></select>
-            </label>
-            <label>To Version:
-                <select id="to-version"></select>
-            </label>
-            <!-- Replace single component select with multi-select and search -->
-            <label for="component-filter">Component(s):
-                <input type="text" id="component-search" placeholder="Search components..." autocomplete="off" style="margin-bottom:0.5em;">
-                <select id="component-filter" multiple size="6" style="min-width:220px;"></select>
-            </label>
-            <button id="compare-btn">Compare</button>
-        </div>
-        <div id="results"></div>
+  <button id="dark-mode-toggle" title="Toggle dark mode" style="position:absolute;top:18px;right:24px;font-size:1.2em;padding:0.3em 0.7em;border-radius:6px;border:none;background:#eee;cursor:pointer;z-index:10;">🌙</button>
+  <div id="app">
+    <h1>OpenTelemetry Collector Release Notes Comparator</h1>
+    <div style="text-align:center;margin-bottom:1.2em;max-width:700px;margin-left:auto;margin-right:auto;">
+      <p style="font-size:1.08em;color:#444;line-height:1.6;">
+        Compare and filter <b>opentelemetry-collector</b> and <b>contrib</b> release/upgrade notes by version and component. Highlights breaking changes and bugfixes! Share links to exact diffs. <br>
+        <a href="https://github.com/open-telemetry/opentelemetry-collector" target="_blank" rel="noopener noreferrer">opentelemetry-collector repo</a> &bull; 
+        <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib" target="_blank" rel="noopener noreferrer">opentelemetry-collector-contrib repo</a>
+      </p>
     </div>
-    <script src="app.js"></script>
+    <form class="controls" style="gap:2.2rem;align-items:flex-end;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:0.5em;min-width:180px;">
+        <label for="project-select">Project:
+          <select id="project-select">
+            <option value="otelcol">opentelemetry-collector</option>
+            <option value="otelcol-contrib">opentelemetry-collector-contrib</option>
+          </select>
+        </label>
+        <span id="latest-version" style="color:#6a3fc7;font-weight:bold;"></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5em;min-width:140px;">
+        <label for="from-version">From Version:
+          <select id="from-version"></select>
+        </label>
+        <label for="to-version">To Version:
+          <select id="to-version"></select>
+        </label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5em;min-width:220px;">
+        <label for="component-filter">Component(s):</label>
+        <input type="text" id="component-search" placeholder="Search components..." autocomplete="off" style="margin-bottom:0.5em;">
+        <select id="component-filter" multiple size="6" style="min-width:220px;"></select>
+      </div>
+      <button type="button" id="compare-btn" style="height:3.5em;align-self:center;min-width:110px;font-size:1.1em;background:#ececf6;border-radius:8px;border:1px solid #bbb;">Compare</button>
+    </form>
+    <div id="results"></div>
+  </div>
+  <script src="app.js"></script>
 </body>
 </html>
