@@ -3,45 +3,86 @@ body {
     background: #f7f7fa;
     margin: 0;
     padding: 0;
+    transition: background 0.3s, color 0.3s;
+}
+body.dark {
+    background: #181a1b;
+    color: #e6e6ea;
 }
 #app {
-    max-width: 800px;
-    margin: 2rem auto;
+    max-width: 820px;
+    margin: 2.5rem auto;
     background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+    padding: 2.2rem 2.2rem 2.5rem 2.2rem;
+    transition: background 0.3s, color 0.3s;
+}
+body.dark #app {
+    background: #23262b;
+    color: #e6e6ea;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.25);
 }
 h1 {
     text-align: center;
     color: #3a3a3a;
+    font-size: 2.1rem;
+    margin-bottom: 1.5rem;
+}
+body.dark h1 {
+    color: #e6e6ea;
 }
 .controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 2.2rem;
     justify-content: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.2rem;
+    background: #f5f8fa;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem 0.7rem 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+body.dark .controls {
+    background: #23262b;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
 }
 label {
     display: flex;
     flex-direction: column;
     font-weight: bold;
     color: #444;
+    margin-bottom: 0.2em;
 }
-select, button {
-    margin-top: 0.5rem;
+body.dark label {
+    color: #e6e6ea;
+}
+select, button, input[type="text"] {
+    margin-top: 0.3rem;
     padding: 0.5rem;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    border-radius: 6px;
+    border: 1px solid #bbb;
     font-size: 1rem;
+    background: #fff;
+    color: #222;
+    transition: background 0.3s, color 0.3s, border 0.3s;
+}
+body.dark select, body.dark button, body.dark input[type="text"] {
+    background: #23262b;
+    color: #e6e6ea;
+    border: 1px solid #444;
 }
 #results {
-    margin-top: 2rem;
+    margin-top: 2.2rem;
     background: #f0f4f8;
-    border-radius: 6px;
-    padding: 1rem;
-    min-height: 100px;
+    border-radius: 8px;
+    padding: 1.2rem;
+    min-height: 110px;
+    transition: background 0.3s, color 0.3s;
+}
+body.dark #results {
+    background: #23262b;
+    color: #e6e6ea;
 }
 .release-block {
     background: #f5f8fa;
@@ -49,6 +90,12 @@ select, button {
     margin-bottom: 2rem;
     padding: 1.5rem 2rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: background 0.3s, color 0.3s;
+}
+body.dark .release-block {
+    background: #23262b;
+    color: #e6e6ea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
 .version-header {
     margin-top: 0;
@@ -58,12 +105,18 @@ select, button {
     letter-spacing: 0.01em;
     margin-bottom: 0.5rem;
 }
+body.dark .version-header {
+    color: #b3aaff;
+}
 .component-name {
     color: #4a5a6a;
     font-size: 1.1rem;
     font-weight: 600;
     margin-top: 1.2rem;
     margin-bottom: 0.2rem;
+}
+body.dark .component-name {
+    color: #b3aaff;
 }
 .notes-list {
     margin-top: 0.2rem;
@@ -73,6 +126,9 @@ select, button {
     font-size: 1rem;
     line-height: 1.6;
 }
+body.dark .notes-list {
+    color: #e6e6ea;
+}
 .notes-list li {
     margin-bottom: 0.3rem;
     background: #fff;
@@ -80,7 +136,38 @@ select, button {
     padding: 0.4em 0.7em;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     border-left: 4px solid #b3c6e0;
+    transition: background 0.3s, color 0.3s, border 0.3s;
+}
+body.dark .notes-list li {
+    background: #23262b;
+    color: #e6e6ea;
+    border-left: 4px solid #6a3fc7;
 }
 .notes-list li:has(.emoji) {
     border-left-color: #f7b731;
+}
+body.dark .notes-list li:has(.emoji) {
+    border-left-color: #ffe066;
+}
+#dark-mode-toggle {
+    background: #fff;
+    color: #6a3fc7;
+    border: 1px solid #bbb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    font-weight: bold;
+    transition: background 0.3s, color 0.3s, border 0.3s;
+}
+#dark-mode-toggle:hover {
+    background: #ececf6;
+    color: #3a3a3a;
+}
+body.dark #dark-mode-toggle {
+    background: #23262b;
+    color: #ffe066;
+    border: 1px solid #444;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+body.dark #dark-mode-toggle:hover {
+    background: #181a1b;
+    color: #fff;
 }
