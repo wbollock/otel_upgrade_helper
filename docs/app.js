@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateComponents();
             }
 
+            // --- Fuzzy search and multi-select for components ---
+            const componentSearch = document.getElementById('component-search');
+            let allComponents = [];
+            let fuse = null;
+
             function updateComponents(keepSelected = true) {
                 const project = projectSelect.value;
                 const from = fromVersion.value;
@@ -34,15 +39,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Fix common typos in component names
                 const fixed = Array.from(components).map(c => c.replace(/reciver/g, 'receiver'));
                 const sorted = Array.from(new Set(fixed)).sort();
-                const prevSelected = keepSelected ? componentFilter.value : 'all';
-                componentFilter.innerHTML = '<option value="all">All</option>' + sorted.map(c => `<option value="${c}">${c}</option>`).join('');
-                // Restore previous selection if possible
-                if (sorted.includes(prevSelected)) {
-                    componentFilter.value = prevSelected;
-                } else {
-                    componentFilter.value = 'all';
+                allComponents = sorted;
+                fuse = new window.Fuse(sorted, { includeScore: true, threshold: 0.4 });
+                // Multi-select: restore previous selection
+                let prevSelected = [];
+                if (keepSelected) {
+                    prevSelected = Array.from(componentFilter.selectedOptions).map(o => o.value);
                 }
+                componentFilter.innerHTML = sorted.map(c => `<option value="${c}">${c}</option>`).join('');
+                // Restore previous selection if possible
+                prevSelected.forEach(val => {
+                    const opt = Array.from(componentFilter.options).find(o => o.value === val);
+                    if (opt) opt.selected = true;
+                });
             }
+
+            // Fuzzy search for components
+            componentSearch.addEventListener('input', function() {
+                const q = componentSearch.value.trim();
+                let filtered = allComponents;
+                if (q && fuse) {
+                    filtered = fuse.search(q).map(r => r.item);
+                }
+                // Keep current selection
+                const selected = Array.from(componentFilter.selectedOptions).map(o => o.value);
+                componentFilter.innerHTML = filtered.map(c => `<option value="${c}"${selected.includes(c)?' selected':''}>${c}</option>`).join('');
+            });
 
             projectSelect.addEventListener('change', () => updateVersions());
             fromVersion.addEventListener('change', () => updateComponents(true));
@@ -102,18 +124,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Helper: parse query params
+            // --- Update URL logic for multi-select ---
+            function getSelectedComponents() {
+                return Array.from(componentFilter.selectedOptions).map(o => o.value);
+            }
+            function setQueryParams(params) {
+                const q = Object.entries(params).map(([k,v]) => {
+                    if (Array.isArray(v)) return `${encodeURIComponent(k)}=${encodeURIComponent(v.join(','))}`;
+                    return `${encodeURIComponent(k)}=${encodeURIComponent(v)}`;
+                }).join('&');
+                history.replaceState(null, '', '?' + q);
+            }
             function getQueryParams() {
                 const params = {};
                 window.location.search.replace(/\??([^=&]+)=([^&]*)/g, function(_, k, v) {
                     params[decodeURIComponent(k)] = decodeURIComponent(v);
                 });
                 return params;
-            }
-            // Helper: update query params in URL
-            function setQueryParams(params) {
-                const q = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-                history.replaceState(null, '', '?' + q);
             }
 
             // On load, set selects from URL if present
@@ -123,7 +150,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (params.from) fromVersion.value = params.from;
             if (params.to) toVersion.value = params.to;
             updateComponents();
-            if (params.component) componentFilter.value = params.component;
+            if (params.component) {
+                // Multi-select support
+                const vals = params.component.split(',');
+                Array.from(componentFilter.options).forEach(opt => {
+                    if (vals.includes(opt.value)) opt.selected = true;
+                });
+            }
 
             // When any select changes, update URL
             function updateUrlFromUI() {
@@ -131,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     project: projectSelect.value,
                     from: fromVersion.value,
                     to: toVersion.value,
-                    component: componentFilter.value
+                    component: getSelectedComponents().join(',')
                 });
             }
             projectSelect.addEventListener('change', () => { updateVersions(); updateUrlFromUI(); });
@@ -145,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const project = projectSelect.value;
                 const from = fromVersion.value;
                 const to = toVersion.value;
-                const component = componentFilter.value;
+                const components = getSelectedComponents();
                 let results = [];
                 if (data[project]) {
                     // Get all versions between from and to (inclusive, sorted)
@@ -161,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // For each version, show notes for the selected component(s)
                     selectedVersions.forEach(ver => {
                         const notesData = data[project][ver] || {};
-                        let componentsToShow = component === 'all' ? Object.keys(notesData) : [component];
+                        let componentsToShow = components.length === 0 || components.includes('all') ? Object.keys(notesData) : components;
                         componentsToShow = componentsToShow.filter(c => c && c !== '');
                         let notesFound = false;
                         let notesHtml = '';

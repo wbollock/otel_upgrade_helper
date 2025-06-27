@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenTelemetry Collector Release Notes Comparator</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Add Fuse.js for fuzzy search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -22,10 +24,10 @@
             <label>To Version:
                 <select id="to-version"></select>
             </label>
-            <label>Component:
-                <select id="component-filter">
-                    <option value="all">All</option>
-                </select>
+            <!-- Replace single component select with multi-select and search -->
+            <label for="component-filter">Component(s):
+                <input type="text" id="component-search" placeholder="Search components..." autocomplete="off" style="margin-bottom:0.5em;">
+                <select id="component-filter" multiple size="6" style="min-width:220px;"></select>
             </label>
             <button id="compare-btn">Compare</button>
         </div>

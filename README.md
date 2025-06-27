@@ -53,3 +53,13 @@ This project is ready to deploy as a static site using GitHub Pages.
 4. **Visit your site**  
    After the workflow runs your site will be available at:  
    `https://<your-username>.github.io/<your-repo>/`
+
+## Features
+
+- Compare release/upgrade notes for opentelemetry-collector and opentelemetry-collector-contrib between any two versions.
+- Filter by one or more components (multi-select supported).
+- Fuzzy search for components to quickly find what you need.
+- Shareable URLs: copy the link to share your exact comparison (project, versions, components).
+- Highlights breaking changes (🚨) and bugfixes (🐞).
+- Typos in component names are auto-corrected.
+- Clean, modern, responsive UI.
