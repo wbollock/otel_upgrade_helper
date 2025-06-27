@@ -105,6 +105,15 @@ document.addEventListener('DOMContentLoaded', function() {
             file_storage: 'extension',
             health_check: 'extension',
         };
+        function normalizePrometheusBaseType(base, type) {
+            // Normalize typos and unknowns for prometheus receiver
+            const promBases = ['prometheus', 'prometheusreceiver', 'prometheusreciever'];
+            if (promBases.includes(base.toLowerCase()) && (type === 'unknown' || type === 'receiver')) {
+                return { base: 'prometheus', type: 'receiver' };
+            }
+            return { base, type };
+        }
+
         function updateComponents(keepSelected = true) {
             const project = projectSelect.value;
             const from = fromVersion.value;
@@ -121,17 +130,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Build base+type mapping from release notes
             baseTypeToKeys = {};
             fixed.forEach(c => {
-                const base = getBaseName(c);
-                const type = getTypeFromKey(c);
+                let base = getBaseName(c);
+                let type = getTypeFromKey(c);
+                // Normalize prometheus receiver
+                ({ base, type } = normalizePrometheusBaseType(base, type));
                 const key = `${base}:${type}`;
                 if (!baseTypeToKeys[key]) baseTypeToKeys[key] = [];
                 baseTypeToKeys[key].push(c);
             });
-            // --- NEW: Merge in all components from components.json ---
+            // --- Merge in all components from components.json ---
             allComponentList.forEach(entry => {
                 let base = entry.base;
                 let type = entry.type;
                 if (!base || !type) return;
+                // Normalize prometheus receiver
+                ({ base, type } = normalizePrometheusBaseType(base, type));
                 // Infer type if unknown
                 if (type === 'unknown' && knownComponentTypes[base]) {
                     type = knownComponentTypes[base];
@@ -144,14 +157,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     baseTypeToKeys[key].push(`${type}/${base}`);
                 }
             });
-            // Build display list
+            // Build display list, deduplicated
             displayToBaseType = {};
+            const seen = new Set();
             const displayList = Object.keys(baseTypeToKeys).map(k => {
                 const [base, type] = k.split(':');
                 const label = `${base} (${type})`;
+                if (seen.has(label)) return null;
+                seen.add(label);
                 displayToBaseType[label] = k;
                 return label;
-            }).sort();
+            }).filter(Boolean).sort();
             allComponents = displayList;
             fuse = new window.Fuse(displayList, { includeScore: true, threshold: 0.4 });
             // Multi-select: restore previous selection
@@ -419,12 +435,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const m = line.match(/^  ([\w\-\./]+):/);
                     if (m) {
                         let base = m[1].split('/')[0].toLowerCase().replace(/\s+/g, '');
+                        // Normalize prometheus receiver
+                        if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
                         // For this base, find all types in components.json (case-insensitive, ignore spaces)
                         allComponentList.forEach(entry => {
                             if (entry.base && entry.type && entry.type !== 'unknown') {
                                 let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
+                                // Normalize prometheus receiver
+                                if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
                                 if (entryBase === base) {
-                                    defined.add(`${entry.base} (${entry.type})`);
+                                    defined.add(`${entry.base} (${entry.type === 'unknown' ? 'receiver' : entry.type})`);
                                 }
                             }
                         });
