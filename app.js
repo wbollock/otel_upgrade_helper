@@ -289,32 +289,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     detectStatus.textContent = 'Paste a config first.';
                     return;
                 }
-                // Find lines like: receivers: ... receiver_name:, exporters: ... exporter_name:
-                // Simple regex: match lines with 'receivers:', 'exporters:', 'processors:', 'extensions:' and their children
-                const componentRegex = /^(\s*)([\w\-\.]+):/gm;
-                const found = new Set();
+                // Only use the part before the slash for matching (e.g., 'loki' from 'loki/staging')
+                let defined = new Set();
                 let section = '';
                 text.split(/\r?\n/).forEach(line => {
                     const trimmed = line.trim();
                     if (/^(receivers|exporters|processors|extensions):\s*$/.test(trimmed)) {
                         section = trimmed.replace(':','');
-                    } else if (section && /^([\w\-\.]+):/.test(trimmed)) {
-                        const match = trimmed.match(/^([\w\-\.]+):/);
-                        if (match) found.add(match[1]);
+                    } else if (section && /^([\w\-\.\/]+):/.test(trimmed)) {
+                        const m = trimmed.match(/^([\w\-\.\/]+):/);
+                        if (m) defined.add(m[1].split('/')[0]);
+                    } else if (/^\w/.test(trimmed)) {
+                        section = '';
                     }
                 });
-                // Try to match to available components (fuzzy: startsWith or contains)
-                const options = Array.from(componentFilter.options);
-                let matched = [];
-                found.forEach(name => {
-                    // Try exact, then startsWith, then contains
-                    let opt = options.find(o => o.value === name);
-                    if (!opt) opt = options.find(o => o.value.startsWith(name));
-                    if (!opt) opt = options.find(o => o.value.includes(name));
-                    if (opt) {
-                        opt.selected = true;
-                        matched.push(opt.value);
+                // Find all referenced components in pipelines (including slashes)
+                let pipelineRefs = new Set();
+                const pipelineBlock = text.split(/pipelines:/)[1];
+                if (pipelineBlock) {
+                    // Find all - name or - name/variant under pipelines
+                    const refRegex = /-\s*([\w\-\.\/]+)/g;
+                    let m;
+                    while ((m = refRegex.exec(pipelineBlock))) {
+                        pipelineRefs.add(m[1].split('/')[0]);
                     }
+                }
+                // Get all available options
+                const options = Array.from(componentFilter.options);
+                // Always clear previous selections
+                options.forEach(opt => { opt.selected = false; });
+                let matched = [];
+                // For all defined and referenced base names, select all options that start with that base name
+                let allBaseNames = new Set([...defined, ...pipelineRefs]);
+                allBaseNames.forEach(base => {
+                    options.forEach(opt => {
+                        if (opt.value.startsWith(base) && !matched.includes(opt.value)) {
+                            opt.selected = true;
+                            matched.push(opt.value);
+                        }
+                    });
                 });
                 detectStatus.textContent = matched.length ? `Selected: ${matched.join(', ')}` : 'No components detected.';
                 componentFilter.dispatchEvent(new Event('change'));
