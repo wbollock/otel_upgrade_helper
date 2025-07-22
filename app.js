@@ -469,16 +469,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (m) {
                         let base = m[1].split('/')[0].toLowerCase().replace(/\s+/g, '');
                         if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
+                        let type = sectionToType[section];
                         allComponentList.forEach(entry => {
                             if (entry.base && entry.type && entry.type !== 'unknown') {
                                 let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
                                 if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
-                                if (entryBase === base) {
+                                if (entryBase === base && entry.type === type) {
                                     defined.add(`${entry.base} (${entry.type})`);
                                 }
                             }
                         });
-                        ['exporter','receiver','processor','extension'].forEach(suffix => defined.add(`${base} (${suffix})`));
                     }
                     return;
                 }
@@ -486,22 +486,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (/^\w/.test(line.trim()) && !/^(receivers|exporters|processors|extensions):/.test(line.trim())) {
                     section = '';
                 }
-                // --- NEW: Detect components in service.pipelines arrays ---
+                // --- Detect components in service.pipelines arrays ---
                 const pipelineMatch = line.match(/^\s*-(\s*)([\w\-\./]+)$/);
-                if (pipelineMatch) {
+                if (pipelineMatch && section) {
                     let comp = pipelineMatch[2];
                     let base = comp.split('/')[0].toLowerCase().replace(/\s+/g, '');
                     if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
+                    let type = sectionToType[section];
                     allComponentList.forEach(entry => {
                         if (entry.base && entry.type && entry.type !== 'unknown') {
                             let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
                             if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
-                            if (entryBase === base) {
+                            if (entryBase === base && entry.type === type) {
                                 defined.add(`${entry.base} (${entry.type})`);
                             }
                         }
                     });
-                    ['exporter','receiver','processor','extension'].forEach(suffix => defined.add(`${base} (${suffix})`));
                 }
             });
             // Get all available options
