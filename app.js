@@ -6,14 +6,16 @@ document.addEventListener('DOMContentLoaded', function() {
     Promise.all([
         fetch('data/release_notes.json').then(res => res.json()),
         fetch('data/components.json').then(res => res.json())
-    ]).then(([data, allComponentList]) => {
+    ]).then(([dataRaw, allComponentList]) => {
+        // Use correct structure for release_notes.json
+        const data = dataRaw.data;
         // Display generated timestamp
-        if (data.generatedAt) {
+        if (dataRaw.generatedAt) {
             const appDiv = document.getElementById('app');
             const tsDiv = document.createElement('div');
             tsDiv.id = 'generated-timestamp';
             tsDiv.style = 'text-align:center;color:#888;font-size:0.98em;margin-bottom:0.7em;';
-            tsDiv.textContent = `Release notes last generated: ${new Date(data.generatedAt).toLocaleString()}`;
+            tsDiv.textContent = `Release notes last generated: ${new Date(dataRaw.generatedAt).toLocaleString()}`;
             appDiv.insertBefore(tsDiv, appDiv.children[1]);
         }
 
@@ -24,11 +26,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const resultsDiv = document.getElementById('results');
         const latestVersionSpan = document.getElementById('latest-version');
 
+        // Add 'All Components' button
+        const allComponentsBtn = document.createElement('button');
+        allComponentsBtn.textContent = 'Select All Components';
+        allComponentsBtn.style = 'margin-bottom:0.7em;padding:0.4em 1.2em;border-radius:6px;font-size:1em;background:#ececf6;border:1px solid #bbb;';
+        componentFilter.parentNode.insertBefore(allComponentsBtn, componentFilter);
+        allComponentsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Array.from(componentFilter.options).forEach(opt => { opt.selected = true; });
+            // Do NOT dispatch change event, just update UI
+        });
+
         function updateVersions() {
             const project = projectSelect.value;
             const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'})).reverse();
             fromVersion.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
             toVersion.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
+            // Start from version about 10 versions back, or first if less
+            if (versions.length > 0) {
+                fromVersion.value = versions[Math.min(10, versions.length-1)];
+                toVersion.value = versions[0];
+            }
             updateComponents();
         }
 
@@ -203,6 +221,11 @@ document.addEventListener('DOMContentLoaded', function() {
         projectSelect.addEventListener('change', () => { updateVersions(); updateLatestVersion(); });
         fromVersion.addEventListener('change', () => updateComponents(true));
         toVersion.addEventListener('change', () => updateComponents(true));
+        updateVersions();
+        updateLatestVersion();
+
+        // Set default project to otelcol-contrib
+        projectSelect.value = 'otelcol-contrib';
         updateVersions();
         updateLatestVersion();
 
@@ -445,20 +468,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const m = line.match(/^  ([\w\-\./]+):/);
                     if (m) {
                         let base = m[1].split('/')[0].toLowerCase().replace(/\s+/g, '');
-                        // Normalize prometheus receiver
                         if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
-                        // For this base, find all types in components.json (case-insensitive, ignore spaces)
                         allComponentList.forEach(entry => {
                             if (entry.base && entry.type && entry.type !== 'unknown') {
                                 let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
-                                // Normalize prometheus receiver
                                 if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
                                 if (entryBase === base) {
-                                    defined.add(`${entry.base} (${entry.type === 'unknown' ? 'receiver' : entry.type})`);
+                                    defined.add(`${entry.base} (${entry.type})`);
                                 }
                             }
                         });
-                        // Also try legacy/ambiguous cases
                         ['exporter','receiver','processor','extension'].forEach(suffix => defined.add(`${base} (${suffix})`));
                     }
                     return;
@@ -466,6 +485,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // If new top-level key, exit section
                 if (/^\w/.test(line.trim()) && !/^(receivers|exporters|processors|extensions):/.test(line.trim())) {
                     section = '';
+                }
+                // --- NEW: Detect components in service.pipelines arrays ---
+                const pipelineMatch = line.match(/^\s*-(\s*)([\w\-\./]+)$/);
+                if (pipelineMatch) {
+                    let comp = pipelineMatch[2];
+                    let base = comp.split('/')[0].toLowerCase().replace(/\s+/g, '');
+                    if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
+                    allComponentList.forEach(entry => {
+                        if (entry.base && entry.type && entry.type !== 'unknown') {
+                            let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
+                            if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
+                            if (entryBase === base) {
+                                defined.add(`${entry.base} (${entry.type})`);
+                            }
+                        }
+                    });
+                    ['exporter','receiver','processor','extension'].forEach(suffix => defined.add(`${base} (${suffix})`));
                 }
             });
             // Get all available options
