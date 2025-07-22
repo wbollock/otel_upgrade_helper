@@ -1,0 +1,3 @@
+# Ignore generated frontend data files
+docs/data/components.json
+docs/data/release_notes.json
