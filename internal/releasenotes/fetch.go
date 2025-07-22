@@ -53,14 +53,16 @@ func correctComponentName(name string) string {
 func ParseUpgradeNotes(releaseBody string) map[string][]string {
 	result := make(map[string][]string)
 	var currentComponent string
+	var collecting bool
 	for _, line := range strings.Split(releaseBody, "\n") {
-		line = strings.TrimSpace(line)
+		line = strings.TrimRight(line, "\r\n")
+		trimmed := strings.TrimSpace(line)
 		// Look for lines like: - `component/name`: ...
-		if strings.HasPrefix(line, "- `") {
-			endIdx := strings.Index(line[3:], "`")
+		if strings.HasPrefix(trimmed, "- `") {
+			endIdx := strings.Index(trimmed[3:], "`")
 			if endIdx > 0 {
-				currentComponent = correctComponentName(line[3 : 3+endIdx])
-				note := strings.TrimSpace(line[3+endIdx+1:])
+				currentComponent = correctComponentName(trimmed[3 : 3+endIdx])
+				note := strings.TrimSpace(trimmed[3+endIdx+1:])
 				if strings.HasPrefix(note, ":") {
 					note = strings.TrimSpace(note[1:])
 				}
@@ -68,11 +70,26 @@ func ParseUpgradeNotes(releaseBody string) map[string][]string {
 				if note != "" {
 					result[currentComponent] = append(result[currentComponent], note)
 				}
+				collecting = true
+				continue
 			}
 		}
+		// If we hit another component, stop collecting for previous
+		if strings.HasPrefix(trimmed, "- `") {
+			collecting = false
+		}
+		// Collect indented sub-bullets as part of the current component
+		if collecting && (strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t") || (len(line) > 0 && line[0] == ' ')) {
+			subNote := strings.TrimSpace(line)
+			subNote = highlightEmojis(subNote)
+			if subNote != "" {
+				result[currentComponent] = append(result[currentComponent], subNote)
+			}
+			continue
+		}
 		// Also collect top-level breaking changes and bugfixes (not tied to a component)
-		if strings.HasPrefix(line, "- ") && !strings.HasPrefix(line, "- `") {
-			note := strings.TrimPrefix(line, "- ")
+		if strings.HasPrefix(trimmed, "- ") && !strings.HasPrefix(trimmed, "- `") {
+			note := strings.TrimPrefix(trimmed, "- ")
 			note = highlightEmojis(note)
 			if note != "" {
 				result["(general)"] = append(result["(general)"], note)
