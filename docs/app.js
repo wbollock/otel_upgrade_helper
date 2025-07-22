@@ -26,11 +26,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const resultsDiv = document.getElementById('results');
         const latestVersionSpan = document.getElementById('latest-version');
 
+        // Add 'All Components' button
+        const allComponentsBtn = document.createElement('button');
+        allComponentsBtn.textContent = 'Select All Components';
+        allComponentsBtn.style = 'margin-bottom:0.7em;padding:0.4em 1.2em;border-radius:6px;font-size:1em;background:#ececf6;border:1px solid #bbb;';
+        componentFilter.parentNode.insertBefore(allComponentsBtn, componentFilter);
+        allComponentsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            Array.from(componentFilter.options).forEach(opt => { opt.selected = true; });
+            // Do NOT dispatch change event, just update UI
+        });
+
         function updateVersions() {
             const project = projectSelect.value;
             const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'})).reverse();
             fromVersion.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
             toVersion.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
+            // Start from version about 10 versions back, or first if less
+            if (versions.length > 0) {
+                fromVersion.value = versions[Math.min(10, versions.length-1)];
+                toVersion.value = versions[0];
+            }
             updateComponents();
         }
 
@@ -205,6 +221,11 @@ document.addEventListener('DOMContentLoaded', function() {
         projectSelect.addEventListener('change', () => { updateVersions(); updateLatestVersion(); });
         fromVersion.addEventListener('change', () => updateComponents(true));
         toVersion.addEventListener('change', () => updateComponents(true));
+        updateVersions();
+        updateLatestVersion();
+
+        // Set default project to otelcol-contrib
+        projectSelect.value = 'otelcol-contrib';
         updateVersions();
         updateLatestVersion();
 
