@@ -13,3 +13,9 @@ type ReleaseNote struct {
 // Contains all parsed notes for all versions/components
 // Example: { "otelcol": { "v0.99.0": { "componentA": ["note1", ...] } } }
 type ReleaseNotesData map[string]map[string]map[string][]string
+
+// ReleaseNotesWrapper wraps the release notes data with metadata
+type ReleaseNotesWrapper struct {
+	GeneratedAt string          `json:"generatedAt"`
+	Data       ReleaseNotesData `json:"data"`
+}

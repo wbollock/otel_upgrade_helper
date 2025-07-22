@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('data/release_notes.json').then(res => res.json()),
         fetch('data/components.json').then(res => res.json())
     ]).then(([data, allComponentList]) => {
+        // Display generated timestamp
+        if (data.generatedAt) {
+            const appDiv = document.getElementById('app');
+            const tsDiv = document.createElement('div');
+            tsDiv.id = 'generated-timestamp';
+            tsDiv.style = 'text-align:center;color:#888;font-size:0.98em;margin-bottom:0.7em;';
+            tsDiv.textContent = `Release notes last generated: ${new Date(data.generatedAt).toLocaleString()}`;
+            appDiv.insertBefore(tsDiv, appDiv.children[1]);
+        }
+
         const projectSelect = document.getElementById('project-select');
         const fromVersion = document.getElementById('from-version');
         const toVersion = document.getElementById('to-version');

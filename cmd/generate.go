@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v50/github"
 	"golang.org/x/oauth2"
@@ -54,7 +55,13 @@ func main() {
 		panic(err)
 	}
 	defer f.Close()
-	json.NewEncoder(f).Encode(allData)
+	
+	wrapper := releasenotes.ReleaseNotesWrapper{
+		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
+		Data:       allData,
+	}
+	
+	json.NewEncoder(f).Encode(wrapper)
 	fmt.Println("Generated docs/data/release_notes.json")
 
 	// --- Generate components.json from release notes data ---
