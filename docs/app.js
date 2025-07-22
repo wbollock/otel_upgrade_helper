@@ -6,14 +6,16 @@ document.addEventListener('DOMContentLoaded', function() {
     Promise.all([
         fetch('data/release_notes.json').then(res => res.json()),
         fetch('data/components.json').then(res => res.json())
-    ]).then(([data, allComponentList]) => {
+    ]).then(([dataRaw, allComponentList]) => {
+        // Use correct structure for release_notes.json
+        const data = dataRaw.data;
         // Display generated timestamp
-        if (data.generatedAt) {
+        if (dataRaw.generatedAt) {
             const appDiv = document.getElementById('app');
             const tsDiv = document.createElement('div');
             tsDiv.id = 'generated-timestamp';
             tsDiv.style = 'text-align:center;color:#888;font-size:0.98em;margin-bottom:0.7em;';
-            tsDiv.textContent = `Release notes last generated: ${new Date(data.generatedAt).toLocaleString()}`;
+            tsDiv.textContent = `Release notes last generated: ${new Date(dataRaw.generatedAt).toLocaleString()}`;
             appDiv.insertBefore(tsDiv, appDiv.children[1]);
         }
 
@@ -445,20 +447,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const m = line.match(/^  ([\w\-\./]+):/);
                     if (m) {
                         let base = m[1].split('/')[0].toLowerCase().replace(/\s+/g, '');
-                        // Normalize prometheus receiver
                         if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
-                        // For this base, find all types in components.json (case-insensitive, ignore spaces)
                         allComponentList.forEach(entry => {
                             if (entry.base && entry.type && entry.type !== 'unknown') {
                                 let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
-                                // Normalize prometheus receiver
                                 if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
                                 if (entryBase === base) {
-                                    defined.add(`${entry.base} (${entry.type === 'unknown' ? 'receiver' : entry.type})`);
+                                    defined.add(`${entry.base} (${entry.type})`);
                                 }
                             }
                         });
-                        // Also try legacy/ambiguous cases
                         ['exporter','receiver','processor','extension'].forEach(suffix => defined.add(`${base} (${suffix})`));
                     }
                     return;
@@ -466,6 +464,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // If new top-level key, exit section
                 if (/^\w/.test(line.trim()) && !/^(receivers|exporters|processors|extensions):/.test(line.trim())) {
                     section = '';
+                }
+                // --- NEW: Detect components in service.pipelines arrays ---
+                const pipelineMatch = line.match(/^\s*-(\s*)([\w\-\./]+)$/);
+                if (pipelineMatch) {
+                    let comp = pipelineMatch[2];
+                    let base = comp.split('/')[0].toLowerCase().replace(/\s+/g, '');
+                    if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
+                    allComponentList.forEach(entry => {
+                        if (entry.base && entry.type && entry.type !== 'unknown') {
+                            let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
+                            if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
+                            if (entryBase === base) {
+                                defined.add(`${entry.base} (${entry.type})`);
+                            }
+                        }
+                    });
+                    ['exporter','receiver','processor','extension'].forEach(suffix => defined.add(`${base} (${suffix})`));
                 }
             });
             // Get all available options
