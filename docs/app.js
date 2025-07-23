@@ -520,5 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
             detectStatus.textContent = matched.length ? `Selected: ${matched.join(', ')}` : 'No components detected.';
             componentFilter.dispatchEvent(new Event('change'));
         });
+        // Remove any components that start with a '$' (after trimming whitespace) in the UI as well
+        allComponentList = allComponentList.filter(c => !String(c.base || '').trim().startsWith('$'));
     });
 });

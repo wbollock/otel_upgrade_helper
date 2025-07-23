@@ -49,18 +49,42 @@ func main() {
 		}
 	}
 
+	// --- Filter out $-prefixed components from release notes data ---
+	for projectName, project := range allData {
+		for version, versionData := range project {
+			filteredVersionData := make(map[string][]string)
+			for compKey, notes := range versionData {
+				// Split on '/'; get base
+				parts := splitAndTrim(compKey, "/")
+				base := ""
+				if len(parts) > 1 {
+					base = parts[1]
+				} else if len(parts) == 1 {
+					base = parts[0]
+				}
+				baseTrimmed := strings.ToLower(strings.TrimSpace(base))
+				if !strings.HasPrefix(baseTrimmed, "$") {
+					filteredVersionData[compKey] = notes
+				} else {
+					fmt.Fprintf(os.Stderr, "Filtered out release notes for component with base starting with $: %q\n", compKey)
+				}
+			}
+			allData[projectName][version] = filteredVersionData
+		}
+	}
+
 	os.MkdirAll("docs/data", 0755)
 	f, err := os.Create("docs/data/release_notes.json")
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
-	
+
 	wrapper := releasenotes.ReleaseNotesWrapper{
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
-		Data:       allData,
+		Data:        allData,
 	}
-	
+
 	json.NewEncoder(f).Encode(wrapper)
 	fmt.Println("Generated docs/data/release_notes.json")
 
@@ -126,8 +150,19 @@ func main() {
 		panic(err)
 	}
 	defer cf.Close()
-	json.NewEncoder(cf).Encode(components)
-	fmt.Println("Generated docs/data/components.json from release notes")
+
+	// Remove any components that start with a '$' (after trimming whitespace and lowercasing) before writing to JSON
+	filteredComponents := make([]Component, 0, len(components))
+	for _, c := range components {
+		baseTrimmed := strings.ToLower(strings.TrimSpace(c.Base))
+		if !strings.HasPrefix(baseTrimmed, "$") {
+			filteredComponents = append(filteredComponents, c)
+		} else {
+			fmt.Fprintf(os.Stderr, "Filtered out component with base starting with $: %q\n", c.Base)
+		}
+	}
+	json.NewEncoder(cf).Encode(filteredComponents)
+	fmt.Println("Generated docs/data/components.json from release notes (filtered $ components, trimmed, lowercased check)")
 }
 
 // splitAndTrim splits a string by sep and trims whitespace from each part
