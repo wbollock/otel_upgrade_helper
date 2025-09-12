@@ -17,7 +17,7 @@
     <div style="text-align:center;margin-bottom:1.2em;max-width:700px;margin-left:auto;margin-right:auto;">
       <p style="font-size:1.08em;color:#444;line-height:1.6;">
         Compare and filter <b>opentelemetry-collector</b> and <b>opentelemetry-collector-contrib</b> release notes by version and component. Highlights breaking changes and bugfixes! Share links to exact diffs. <br>
-        This tool is meant to help judge opentelemetry-collector upgrade impact. Note that the scraping and data in release notes can be inconsistent, so always test carefully. <br>
+        This tool is meant to help judge opentelemetry-collector (and -contrib) upgrade impact. Note that the data format in release notes can be inconsistent and the component detection may not be perfect either, so always test carefully.<br>
         <a href="https://github.com/open-telemetry/opentelemetry-collector" target="_blank" rel="noopener noreferrer">opentelemetry-collector repo</a> &bull; 
         <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib" target="_blank" rel="noopener noreferrer">opentelemetry-collector-contrib repo</a>
       </p>
@@ -48,7 +48,7 @@
       <div style="display:flex;flex-direction:column;gap:0.5em;min-width:220px;">
         <label for="component-filter">Component(s):</label>
         <input type="text" id="component-search" placeholder="Search components..." autocomplete="off" style="margin-bottom:0.5em;">
-        <select id="component-filter" multiple size="6" style="min-width:220px;"></select>
+        <select id="component-filter" multiple size="12" style="min-width:320px;max-width:100%;width:100%;height:auto;box-sizing:border-box;font-size:1.08em;line-height:1.5;border-radius:8px;resize:vertical;"></select>
       </div>
       <button type="button" id="compare-btn" style="height:3.5em;align-self:center;min-width:110px;font-size:1.1em;background:#ececf6;border-radius:8px;border:1px solid #bbb;">Compare</button>
     </form>
