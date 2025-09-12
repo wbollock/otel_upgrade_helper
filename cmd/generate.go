@@ -137,6 +137,19 @@ func main() {
 				if base == "" {
 					base = compKey
 				}
+
+				// Filter out known-bad components
+				baseTrimmed := strings.ToLower(strings.TrimSpace(base))
+				if strings.HasSuffix(baseTrimmed, ",") ||
+					strings.Contains(baseTrimmed, ",") ||
+					baseTrimmed == "processor" ||
+					baseTrimmed == "connector" ||
+					baseTrimmed == "exporter" ||
+					strings.HasPrefix(baseTrimmed, "git.repository") {
+					fmt.Fprintf(os.Stderr, "Filtered out known-bad component: %q (base: %q)\n", compKey, base)
+					continue
+				}
+
 				key := base + ":" + ctype
 				if _, exists := componentSet[key]; !exists {
 					components = append(components, Component{Base: base, Type: ctype})

@@ -16,6 +16,6 @@ type ReleaseNotesData map[string]map[string]map[string][]string
 
 // ReleaseNotesWrapper wraps the release notes data with metadata
 type ReleaseNotesWrapper struct {
-	GeneratedAt string          `json:"generatedAt"`
-	Data       ReleaseNotesData `json:"data"`
+	GeneratedAt string           `json:"generatedAt"`
+	Data        ReleaseNotesData `json:"data"`
 }
