@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('data/release_notes.json').then(res => res.json()),
         fetch('data/components.json').then(res => res.json())
     ]).then(([dataRaw, allComponentList]) => {
+        // Remove any components that start with a '$' (after trimming whitespace) in the UI as well
+        allComponentList = allComponentList.filter(c => !String(c.base || '').trim().startsWith('$'));
+
         // Use correct structure for release_notes.json
         const data = dataRaw.data;
         // Display generated timestamp
@@ -470,15 +473,33 @@ document.addEventListener('DOMContentLoaded', function() {
                         let base = m[1].split('/')[0].toLowerCase().replace(/\s+/g, '');
                         if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
                         let type = sectionToType[section];
+                        let found = false;
+
+                        // First try exact matching
                         allComponentList.forEach(entry => {
                             if (entry.base && entry.type && entry.type !== 'unknown') {
                                 let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
                                 if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
                                 if (entryBase === base && entry.type === type) {
                                     defined.add(`${entry.base} (${entry.type})`);
+                                    found = true;
                                 }
                             }
                         });
+
+                        // If no exact match, try fuzzy matching by removing separators
+                        if (!found) {
+                            const baseFuzzy = base.replace(/[_\-\.]/g, '');
+                            allComponentList.forEach(entry => {
+                                if (entry.base && entry.type && entry.type !== 'unknown') {
+                                    let entryBase = entry.base.toLowerCase().replace(/\s+/g, '').replace(/[_\-\.]/g, '');
+                                    if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
+                                    if (entryBase === baseFuzzy && entry.type === type) {
+                                        defined.add(`${entry.base} (${entry.type})`);
+                                    }
+                                }
+                            });
+                        }
                     }
                     return;
                 }
@@ -493,15 +514,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     let base = comp.split('/')[0].toLowerCase().replace(/\s+/g, '');
                     if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
                     let type = sectionToType[section];
+                    let found = false;
+
+                    // First try exact matching
                     allComponentList.forEach(entry => {
                         if (entry.base && entry.type && entry.type !== 'unknown') {
                             let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
                             if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
                             if (entryBase === base && entry.type === type) {
                                 defined.add(`${entry.base} (${entry.type})`);
+                                found = true;
                             }
                         }
                     });
+
+                    // If no exact match, try fuzzy matching by removing separators
+                    if (!found) {
+                        const baseFuzzy = base.replace(/[_\-\.]/g, '');
+                        allComponentList.forEach(entry => {
+                            if (entry.base && entry.type && entry.type !== 'unknown') {
+                                let entryBase = entry.base.toLowerCase().replace(/\s+/g, '').replace(/[_\-\.]/g, '');
+                                if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
+                                if (entryBase === baseFuzzy && entry.type === type) {
+                                    defined.add(`${entry.base} (${entry.type})`);
+                                }
+                            }
+                        });
+                    }
                 }
             });
             // Get all available options
@@ -520,7 +559,5 @@ document.addEventListener('DOMContentLoaded', function() {
             detectStatus.textContent = matched.length ? `Selected: ${matched.join(', ')}` : 'No components detected.';
             componentFilter.dispatchEvent(new Event('change'));
         });
-        // Remove any components that start with a '$' (after trimming whitespace) in the UI as well
-        allComponentList = allComponentList.filter(c => !String(c.base || '').trim().startsWith('$'));
     });
 });
