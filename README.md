@@ -2,7 +2,7 @@
 
 This project generates a static webapp (for GitHub Pages) that allows users to compare release/upgrade notes for opentelemetry-collector and opentelemetry-collector-contrib between versions, filter by component, and see only relevant upgrade notes.
 
-✨ vibe coded ✨
+✨ As seen on [o11y-news 2025-09-29](https://o11y.news/2025-09-29/)! ✨
 
 ## How it works
 
