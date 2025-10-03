@@ -37,7 +37,7 @@ body.dark input, body.dark textarea, body.dark select, body.dark option {
     background: #fff !important;
 }
 
-body.dark button {
+body.dark button:not(#compare-btn):not(#dark-mode-toggle) {
     color: #222 !important;
 }
 
@@ -218,29 +218,30 @@ button {
     min-width: 110px;
     font-size: 1.1em;
     font-weight: 600;
-    background: var(--primary-color);
-    color: #fff;
-    border: 1px solid var(--primary-color);
+    background: var(--primary-color) !important;
+    color: #fff !important;
+    border: 1px solid var(--primary-color) !important;
     box-shadow: 0 2px 8px rgba(106, 63, 199, 0.3);
 }
 
 #compare-btn:hover {
-    background: #5a2fb7;
-    border-color: #5a2fb7;
+    background: #5a2fb7 !important;
+    border-color: #5a2fb7 !important;
+    color: #fff !important;
     box-shadow: 0 4px 12px rgba(106, 63, 199, 0.4);
     transform: translateY(-1px);
 }
 
 body.dark #compare-btn {
-    background: var(--primary-light);
+    background: var(--primary-light) !important;
     color: #1a1c1f !important;
-    border: 1px solid var(--primary-light);
+    border: 1px solid var(--primary-light) !important;
     box-shadow: 0 2px 8px rgba(201, 195, 255, 0.2);
 }
 
 body.dark #compare-btn:hover {
-    background: #ddd8ff;
-    border-color: #ddd8ff;
+    background: #ddd8ff !important;
+    border-color: #ddd8ff !important;
     box-shadow: 0 4px 12px rgba(201, 195, 255, 0.3);
     color: #1a1c1f !important;
 }
