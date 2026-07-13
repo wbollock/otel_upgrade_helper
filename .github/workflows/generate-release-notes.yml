@@ -35,3 +35,19 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
+
+      - name: Commit heartbeat to prevent workflow auto-disable
+        # Scheduled workflows are disabled by GitHub after 60 days without a
+        # push to the repo. This commit is real repository activity that
+        # resets that clock, so the daily schedule keeps running even during
+        # long stretches with no manual commits. [skip ci] avoids the push
+        # re-triggering this same workflow.
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/last-generated.txt
+          git add .github/last-generated.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: record release notes generation run [skip ci]"
+            git push
+          fi
