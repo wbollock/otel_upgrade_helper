@@ -24,20 +24,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const projectSelect = document.getElementById('project-select');
         const fromVersion = document.getElementById('from-version');
         const toVersion = document.getElementById('to-version');
-        const componentFilter = document.getElementById('component-filter');
+        const componentList = document.getElementById('component-list');
+        const componentCount = document.getElementById('component-count');
+        const componentClear = document.getElementById('component-clear');
         const resultsDiv = document.getElementById('results');
         const latestVersionSpan = document.getElementById('latest-version');
-
-        // Add 'All Components' button
-        const allComponentsBtn = document.createElement('button');
-        allComponentsBtn.textContent = 'Select All Components';
-        allComponentsBtn.style = 'margin-bottom:0.7em;padding:0.4em 1.2em;border-radius:6px;font-size:1em;background:#ececf6;border:1px solid #bbb;';
-        componentFilter.parentNode.insertBefore(allComponentsBtn, componentFilter);
-        allComponentsBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            Array.from(componentFilter.options).forEach(opt => { opt.selected = true; });
-            // Do NOT dispatch change event, just update UI
-        });
 
         function updateVersions() {
             const project = projectSelect.value;
@@ -62,10 +53,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // --- Fuzzy search and multi-select for components ---
+        // --- Component search and multi-select ---
+        // Selection lives in a Set of display labels, independent of what the
+        // search box currently shows, so searching can never drop selections.
+        // An empty selection means "all components".
         const componentSearch = document.getElementById('component-search');
+        const selectedSet = new Set();
         let allComponents = [];
-        let fuse = null;
 
         // --- Enhanced component mapping with type ---
         // Component keys in release_notes.json and components.json are both
@@ -84,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return idx === -1 ? key : key.slice(idx + 1);
         }
 
-        function updateComponents(keepSelected = true) {
+        function updateComponents() {
             const project = projectSelect.value;
             const from = fromVersion.value;
             const to = toVersion.value;
@@ -126,47 +120,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 return label;
             }).filter(Boolean).sort();
             allComponents = displayList;
-            fuse = new window.Fuse(displayList, { includeScore: true, threshold: 0.4 });
-            // Multi-select: restore previous selection
-            let prevSelected = [];
-            if (keepSelected) {
-                prevSelected = Array.from(componentFilter.selectedOptions).map(o => o.value);
-            }
-            componentFilter.innerHTML = displayList.map(c => `<option value="${c}"${prevSelected.includes(c)?' selected':''}>${c}</option>`).join('');
+            // Drop selections that no longer exist (e.g. after project switch)
+            selectedSet.forEach(label => {
+                if (!allComponents.includes(label)) selectedSet.delete(label);
+            });
+            renderComponentList();
         }
 
-        // Fuzzy search for components
-        componentSearch.addEventListener('input', function() {
-            const q = componentSearch.value.trim();
-            let filtered = allComponents;
-            if (q && fuse) {
-                filtered = fuse.search(q).map(r => r.item);
-            }
-            // Keep current selection
-            const selected = Array.from(componentFilter.selectedOptions).map(o => o.value);
-            componentFilter.innerHTML = filtered.map(c => `<option value="${c}"${selected.includes(c)?' selected':''}>${c}</option>`).join('');
+        function renderComponentList() {
+            const q = componentSearch.value.trim().toLowerCase();
+            const qLoose = q.replace(/[_\-.\s]/g, '');
+            const matches = label => {
+                if (!q) return true;
+                const l = label.toLowerCase();
+                return l.includes(q) || l.replace(/[_\-.\s]/g, '').includes(qLoose);
+            };
+            // Selected components stay visible (pinned first) regardless of
+            // the search filter, so a search can never hide what's selected.
+            const selected = allComponents.filter(c => selectedSet.has(c));
+            const unselected = allComponents.filter(c => !selectedSet.has(c) && matches(c));
+            const row = (c, checked) =>
+                `<label class="component-option${checked ? ' selected' : ''}"><input type="checkbox" value="${escapeHtml(c)}"${checked ? ' checked' : ''}> ${escapeHtml(c)}</label>`;
+            componentList.innerHTML = selected.map(c => row(c, true)).join('') + unselected.map(c => row(c, false)).join('');
+            updateComponentCount();
+        }
+
+        function updateComponentCount() {
+            const n = selectedSet.size;
+            componentCount.textContent = n === 0
+                ? `All ${allComponents.length} components (select to narrow)`
+                : `${n} component${n === 1 ? '' : 's'} selected`;
+            componentClear.hidden = n === 0;
+        }
+
+        componentSearch.addEventListener('input', renderComponentList);
+
+        componentList.addEventListener('change', e => {
+            const box = e.target;
+            if (!box || box.type !== 'checkbox') return;
+            if (box.checked) selectedSet.add(box.value);
+            else selectedSet.delete(box.value);
+            box.closest('.component-option').classList.toggle('selected', box.checked);
+            // Deliberately no re-render here: reordering under the pointer
+            // would make multi-picking miserable. Pinning refreshes on the
+            // next search/version change.
+            updateComponentCount();
+            updateUrlFromUI();
         });
 
-        projectSelect.addEventListener('change', () => { updateVersions(); updateLatestVersion(); });
-        fromVersion.addEventListener('change', () => updateComponents(true));
-        toVersion.addEventListener('change', () => updateComponents(true));
-        updateVersions();
-        updateLatestVersion();
+        componentClear.addEventListener('click', () => {
+            selectedSet.clear();
+            renderComponentList();
+            updateUrlFromUI();
+        });
 
-        // Set default project to otelcol-contrib
-        projectSelect.value = 'otelcol-contrib';
-        updateVersions();
-        updateLatestVersion();
-
-        // --- Update URL logic for multi-select ---
+        // --- URL state (shareable links) ---
         function getSelectedComponents() {
-            return Array.from(componentFilter.selectedOptions).map(o => o.value);
+            return allComponents.filter(c => selectedSet.has(c));
         }
         function setQueryParams(params) {
-            const q = Object.entries(params).map(([k,v]) => {
-                if (Array.isArray(v)) return `${encodeURIComponent(k)}=${encodeURIComponent(v.join(','))}`;
-                return `${encodeURIComponent(k)}=${encodeURIComponent(v)}`;
-            }).join('&');
+            const q = Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
             history.replaceState(null, '', '?' + q);
         }
         function getQueryParams() {
@@ -177,42 +190,36 @@ document.addEventListener('DOMContentLoaded', function() {
             return params;
         }
 
-        // On load, set selects from URL if present
-        const params = getQueryParams();
-        if (params.project) projectSelect.value = params.project;
-        updateVersions();
-        if (params.from) fromVersion.value = params.from;
-        if (params.to) toVersion.value = params.to;
-        updateComponents();
-        if (params.component === 'all') {
-            Array.from(componentFilter.options).forEach(opt => { opt.selected = true; });
-        } else if (params.component) {
-            // Multi-select support
-            const vals = params.component.split(',');
-            Array.from(componentFilter.options).forEach(opt => {
-                if (vals.includes(opt.value)) opt.selected = true;
-            });
-        }
-
-        // When any select changes, update URL
         function updateUrlFromUI() {
-            const selected = getSelectedComponents();
-            const options = Array.from(componentFilter.options);
-            // Selecting every component can produce a component list many KB
-            // long, which throws "URI too long" from history.replaceState.
-            // Use a compact "all" sentinel instead of serializing every value.
-            const component = (options.length > 0 && selected.length === options.length) ? 'all' : selected.join(',');
             setQueryParams({
                 project: projectSelect.value,
                 from: fromVersion.value,
                 to: toVersion.value,
-                component
+                // Empty means "all components" — never serialize the full
+                // list, which used to blow past URL length limits.
+                component: getSelectedComponents().join(',')
             });
         }
+
         projectSelect.addEventListener('change', () => { updateVersions(); updateLatestVersion(); updateUrlFromUI(); });
-        fromVersion.addEventListener('change', () => { updateComponents(true); updateUrlFromUI(); });
-        toVersion.addEventListener('change', () => { updateComponents(true); updateUrlFromUI(); });
-        componentFilter.addEventListener('change', updateUrlFromUI);
+        fromVersion.addEventListener('change', () => { updateComponents(); updateUrlFromUI(); });
+        toVersion.addEventListener('change', () => { updateComponents(); updateUrlFromUI(); });
+
+        // Initial state: default project, then apply anything from the URL
+        projectSelect.value = 'otelcol-contrib';
+        const params = getQueryParams();
+        if (params.project && data[params.project]) projectSelect.value = params.project;
+        updateVersions();
+        updateLatestVersion();
+        if (params.from) fromVersion.value = params.from;
+        if (params.to) toVersion.value = params.to;
+        updateComponents();
+        if (params.component && params.component !== 'all') {
+            params.component.split(',').forEach(label => {
+                if (allComponents.includes(label)) selectedSet.add(label);
+            });
+            renderComponentList();
+        }
 
         // Also update URL on compare
         document.getElementById('compare-btn').addEventListener('click', function() {
@@ -238,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedVersions.forEach(ver => {
                     const notesData = versionComponents(project, ver);
                     let componentsToShow = [];
-                    if (selectedDisplays.length === 0 || selectedDisplays.includes('all')) {
+                    if (selectedDisplays.length === 0) {
                         componentsToShow = Object.keys(notesData);
                     } else {
                         selectedDisplays.forEach(display => {
@@ -376,114 +383,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 detectStatus.textContent = 'Paste a config first.';
                 return;
             }
-            // Map section to type
             const sectionToType = {
-                exporters: 'exporter',
                 receivers: 'receiver',
+                exporters: 'exporter',
                 processors: 'processor',
-                extensions: 'extension'
+                extensions: 'extension',
+                connectors: 'connector'
             };
-            let defined = new Set();
+            const sectionRe = /^(receivers|exporters|processors|extensions|connectors):\s*$/;
+            const defined = new Set();
+            // Match a config key like "splunk_hec/prod" against known
+            // components: exact base match first, then separator-insensitive
+            // (splunk_hec vs splunkhec).
+            const matchComponent = (rawKey, type) => {
+                const base = rawKey.split('/')[0].toLowerCase().trim();
+                const baseLoose = base.replace(/[_\-.]/g, '');
+                allComponentList.forEach(entry => {
+                    if (!entry.base || entry.type !== type) return;
+                    const entryBase = entry.base.toLowerCase();
+                    if (entryBase === base || entryBase.replace(/[_\-.]/g, '') === baseLoose) {
+                        defined.add(`${entry.base} (${entry.type})`);
+                    }
+                });
+            };
             let section = '';
             text.split(/\r?\n/).forEach(line => {
-                // Detect section start
-                const secMatch = line.trim().match(/^(receivers|exporters|processors|extensions):\s*$/);
+                const secMatch = line.trim().match(sectionRe);
                 if (secMatch) {
                     section = secMatch[1];
                     return;
                 }
-                // If in section, match exactly 2-space indented keys (YAML first-level keys)
-                if (section && /^  ([\w\-\./]+):/.test(line)) {
-                    const m = line.match(/^  ([\w\-\./]+):/);
+                // 2-space indented keys are the component instances of the section
+                if (section) {
+                    const m = line.match(/^  ([\w\-./]+):/);
                     if (m) {
-                        let base = m[1].split('/')[0].toLowerCase().replace(/\s+/g, '');
-                        if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
-                        let type = sectionToType[section];
-                        let found = false;
-
-                        // First try exact matching
-                        allComponentList.forEach(entry => {
-                            if (entry.base && entry.type && entry.type !== 'unknown') {
-                                let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
-                                if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
-                                if (entryBase === base && entry.type === type) {
-                                    defined.add(`${entry.base} (${entry.type})`);
-                                    found = true;
-                                }
-                            }
-                        });
-
-                        // If no exact match, try fuzzy matching by removing separators
-                        if (!found) {
-                            const baseFuzzy = base.replace(/[_\-\.]/g, '');
-                            allComponentList.forEach(entry => {
-                                if (entry.base && entry.type && entry.type !== 'unknown') {
-                                    let entryBase = entry.base.toLowerCase().replace(/\s+/g, '').replace(/[_\-\.]/g, '');
-                                    if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
-                                    if (entryBase === baseFuzzy && entry.type === type) {
-                                        defined.add(`${entry.base} (${entry.type})`);
-                                    }
-                                }
-                            });
-                        }
+                        matchComponent(m[1], sectionToType[section]);
+                        return;
                     }
-                    return;
                 }
-                // If new top-level key, exit section
-                if (/^\w/.test(line.trim()) && !/^(receivers|exporters|processors|extensions):/.test(line.trim())) {
+                // Any new top-level key exits the section
+                if (/^\w/.test(line) && !sectionRe.test(line.trim())) {
                     section = '';
                 }
-                // --- Detect components in service.pipelines arrays ---
-                const pipelineMatch = line.match(/^\s*-(\s*)([\w\-\./]+)$/);
+                // List entries inside a section (pipeline-style arrays)
+                const pipelineMatch = line.match(/^\s*-\s*([\w\-./]+)\s*$/);
                 if (pipelineMatch && section) {
-                    let comp = pipelineMatch[2];
-                    let base = comp.split('/')[0].toLowerCase().replace(/\s+/g, '');
-                    if (["prometheusreceiver","prometheusreciever"].includes(base)) base = "prometheus";
-                    let type = sectionToType[section];
-                    let found = false;
-
-                    // First try exact matching
-                    allComponentList.forEach(entry => {
-                        if (entry.base && entry.type && entry.type !== 'unknown') {
-                            let entryBase = entry.base.toLowerCase().replace(/\s+/g, '');
-                            if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
-                            if (entryBase === base && entry.type === type) {
-                                defined.add(`${entry.base} (${entry.type})`);
-                                found = true;
-                            }
-                        }
-                    });
-
-                    // If no exact match, try fuzzy matching by removing separators
-                    if (!found) {
-                        const baseFuzzy = base.replace(/[_\-\.]/g, '');
-                        allComponentList.forEach(entry => {
-                            if (entry.base && entry.type && entry.type !== 'unknown') {
-                                let entryBase = entry.base.toLowerCase().replace(/\s+/g, '').replace(/[_\-\.]/g, '');
-                                if (["prometheusreceiver","prometheusreciever"].includes(entryBase)) entryBase = "prometheus";
-                                if (entryBase === baseFuzzy && entry.type === type) {
-                                    defined.add(`${entry.base} (${entry.type})`);
-                                }
-                            }
-                        });
-                    }
+                    matchComponent(pipelineMatch[1], sectionToType[section]);
                 }
             });
-            // Get all available options
-            const options = Array.from(componentFilter.options);
-            options.forEach(opt => { opt.selected = false; });
-            let matched = [];
-            // Select options whose label matches any detected base+type
+            selectedSet.clear();
+            const matched = [];
             defined.forEach(label => {
-                options.forEach(opt => {
-                    if (opt.value === label && !matched.includes(opt.value)) {
-                        opt.selected = true;
-                        matched.push(opt.value);
-                    }
-                });
+                if (allComponents.includes(label)) {
+                    selectedSet.add(label);
+                    matched.push(label);
+                }
             });
+            matched.sort();
+            renderComponentList();
+            updateUrlFromUI();
             detectStatus.textContent = matched.length ? `Selected: ${matched.join(', ')}` : 'No components detected.';
-            componentFilter.dispatchEvent(new Event('change'));
         });
     });
 });

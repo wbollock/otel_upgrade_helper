@@ -373,6 +373,57 @@ body.dark .notes-list li::before {
     color: var(--primary-light) !important;
 }
 
+/* Component picker */
+#component-list {
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--card-light);
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 0.3em;
+}
+body.dark #component-list {
+    background: var(--card-dark);
+    border-color: var(--border-dark);
+}
+.component-option {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.45em;
+    font-weight: normal;
+    padding: 0.18em 0.4em;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 0;
+}
+.component-option:hover {
+    background: rgba(106, 63, 199, 0.08);
+}
+.component-option.selected {
+    background: rgba(106, 63, 199, 0.12);
+    font-weight: 600;
+}
+body.dark .component-option:hover,
+body.dark .component-option.selected {
+    background: rgba(201, 195, 255, 0.12);
+}
+#component-picker-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 0.9em;
+    color: #555;
+}
+body.dark #component-picker-meta {
+    color: #ccc !important;
+}
+#component-clear {
+    font-size: 0.85em;
+    padding: 0.15em 0.6em;
+    margin-top: 0;
+}
+
 /* Change-type badges */
 .badge {
     display: inline-block;

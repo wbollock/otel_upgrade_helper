@@ -7,8 +7,6 @@
   <!-- Favicon: OpenTelemetry logo emoji -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🟣</text></svg>">
   <link rel="stylesheet" href="style.css">
-  <!-- Add Fuse.js for fuzzy search -->
-  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 </head>
 <body>
   <button id="dark-mode-toggle" title="Toggle dark mode" style="position:absolute;top:18px;right:24px;font-size:1.2em;padding:0.3em 0.7em;border-radius:6px;border:none;background:#eee;cursor:pointer;z-index:10;">🌙</button>
@@ -48,10 +46,14 @@
           <select id="to-version"></select>
         </label>
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.5em;min-width:220px;">
-        <label for="component-filter">Component(s):</label>
-        <input type="text" id="component-search" placeholder="Search components..." autocomplete="off" style="margin-bottom:0.5em;">
-        <select id="component-filter" multiple size="12" style="min-width:320px;max-width:100%;width:100%;height:auto;box-sizing:border-box;font-size:1.08em;line-height:1.5;border-radius:8px;resize:vertical;"></select>
+      <div id="component-picker" style="display:flex;flex-direction:column;gap:0.5em;min-width:280px;">
+        <label for="component-search" id="component-picker-label">Component(s):</label>
+        <input type="text" id="component-search" placeholder="Search components..." autocomplete="off">
+        <div id="component-picker-meta">
+          <span id="component-count" aria-live="polite"></span>
+          <button type="button" id="component-clear" hidden>Clear selection</button>
+        </div>
+        <div id="component-list" role="group" aria-labelledby="component-picker-label"></div>
       </div>
       <button type="button" id="compare-btn" style="height:3.5em;align-self:center;min-width:110px;font-size:1.1em;background:#ececf6;border-radius:8px;border:1px solid #bbb;">Compare</button>
     </form>
