@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -140,4 +144,39 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Generated docs/data/components.json")
+
+	if err := stampAssetVersions("docs/index.html", "app.js", "style.css"); err != nil {
+		fmt.Fprintf(os.Stderr, "Error stamping asset versions: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// stampAssetVersions rewrites ?v= cache-busting parameters on asset
+// references in index.html using a hash of each asset's content, so
+// browsers refetch exactly when an asset actually changes and repeated
+// generation runs leave index.html untouched.
+func stampAssetVersions(indexPath string, assets ...string) error {
+	html, err := os.ReadFile(indexPath)
+	if err != nil {
+		return err
+	}
+	updated := html
+	for _, asset := range assets {
+		content, err := os.ReadFile("docs/" + asset)
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", asset, err)
+		}
+		sum := sha256.Sum256(content)
+		stamp := hex.EncodeToString(sum[:4])
+		re := regexp.MustCompile(regexp.QuoteMeta(asset) + `(\?v=\w*)?"`)
+		updated = re.ReplaceAll(updated, []byte(asset+"?v="+stamp+`"`))
+	}
+	if bytes.Equal(updated, html) {
+		return nil
+	}
+	if err := os.WriteFile(indexPath, updated, 0644); err != nil {
+		return err
+	}
+	fmt.Println("Stamped asset versions into", indexPath)
+	return nil
 }
