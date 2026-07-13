@@ -3,6 +3,20 @@
 A prioritized plan covering data gathering, note display, UX, design, and code health.
 Items marked **[bug]** are defects observed in the current code, not just polish.
 
+> **Status (2026-07-13):** implemented except for the items below, which are
+> deliberately deferred:
+> - **1.2** (split data per version) — payload is ~1.4 MB raw / ~300 KB gzipped
+>   for full history; revisit when it hurts.
+> - **1.3** (parse chloggen YAML / CHANGELOG.md) — 1.4's section-aware parsing
+>   of release bodies captures the same structure; revisit if bodies and
+>   changelogs diverge.
+> - **1.6** (canonical component list from upstream metadata) — the component
+>   list is now derived deterministically from validated changelog labels;
+>   upstream metadata would add unchanged-component coverage.
+> - **2.4**'s group-by-component view toggle (collapsible blocks shipped).
+> - **3.4**'s config-based current-version detection ("compare with latest" is
+>   effectively the default: To version starts at latest).
+
 ---
 
 ## 1. Release note gathering (backend)
