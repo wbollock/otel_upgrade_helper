@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const appDiv = document.getElementById('app');
             const tsDiv = document.createElement('div');
             tsDiv.id = 'generated-timestamp';
-            tsDiv.style = 'text-align:center;color:#888;font-size:0.98em;margin-bottom:0.7em;';
             tsDiv.textContent = `Release notes last generated: ${new Date(dataRaw.generatedAt).toLocaleString()}`;
             appDiv.insertBefore(tsDiv, appDiv.children[1]);
         }

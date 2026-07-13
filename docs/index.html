@@ -4,50 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenTelemetry Collector Release Notes Comparator</title>
-  <!-- Favicon: OpenTelemetry logo emoji -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🟣</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <button id="dark-mode-toggle" title="Toggle dark mode" style="position:absolute;top:18px;right:24px;font-size:1.2em;padding:0.3em 0.7em;border-radius:6px;border:none;background:#eee;cursor:pointer;z-index:10;">🌙</button>
+  <button id="dark-mode-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
   <div id="app">
-    <h1>OpenTelemetry Collector Release Notes Comparator</h1>
-    <div style="text-align:center;margin-bottom:1.2em;max-width:700px;margin-left:auto;margin-right:auto;">
-      <p style="font-size:1.08em;color:#444;line-height:1.6;">
-        Compare and filter <b>opentelemetry-collector</b> and <b>opentelemetry-collector-contrib</b> release notes by version and component. Highlights breaking changes and bugfixes! Share links to exact diffs. <br>
-        This tool is meant to help judge opentelemetry-collector (and -contrib) upgrade impact. Note that the data format in release notes can be inconsistent and the component detection may not be perfect either, so always test carefully.<br>
-        <a href="https://github.com/open-telemetry/opentelemetry-collector" target="_blank" rel="noopener noreferrer">opentelemetry-collector repo</a> &bull; 
-        <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib" target="_blank" rel="noopener noreferrer">opentelemetry-collector-contrib repo</a>
+    <h1>OpenTelemetry Collector<br>Release Notes Comparator</h1>
+    <div class="intro">
+      <p>
+        See what changed between two versions of
+        <a href="https://github.com/open-telemetry/opentelemetry-collector" target="_blank" rel="noopener noreferrer">opentelemetry-collector</a> or
+        <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib" target="_blank" rel="noopener noreferrer">-contrib</a>,
+        filtered to the components you actually run. Release note formats vary upstream, so always test upgrades carefully.
       </p>
-      <p style="font-size:1em;color:#666;margin-top:0.7em;">
-        If this app was helpful, please <a href="https://github.com/wbollock/otel_upgrade_helper" target="_blank" rel="noopener noreferrer" style="color:#6a3fc7;font-weight:bold;">drop a ⭐ on the GitHub repo</a>!
+      <p class="intro-note">
+        Useful? <a href="https://github.com/wbollock/otel_upgrade_helper" target="_blank" rel="noopener noreferrer">Drop a ⭐ on GitHub</a>.
       </p>
     </div>
-    <div id="config-paste-block" style="text-align:center;margin-bottom:1.5em;">
-      <textarea id="otel-config-paste" rows="3" placeholder="Paste your otelcol YAML config here to auto-select components..." style="width:90%;max-width:600px;padding:0.7em 1em;border-radius:8px;border:1px solid #bbb;font-size:1em;"></textarea><br>
-      <button type="button" id="detect-components-btn" style="margin-top:0.5em;padding:0.5em 1.2em;border-radius:6px;font-size:1em;background:#ececf6;border:1px solid #bbb;">Detect Components</button>
-      <span id="detect-components-status" style="margin-left:1em;color:#6a3fc7;font-size:0.98em;"></span>
+    <div id="config-paste-block">
+      <textarea id="otel-config-paste" rows="3" placeholder="Paste your otelcol YAML config here to auto-select components..."></textarea>
+      <div class="config-paste-actions">
+        <button type="button" id="detect-components-btn">Detect components</button>
+        <span id="detect-components-status" aria-live="polite"></span>
+      </div>
     </div>
-    <form class="controls" style="gap:2.2rem;align-items:flex-end;flex-wrap:wrap;">
-      <div style="display:flex;flex-direction:column;gap:0.5em;min-width:180px;">
-        <label for="project-select">Project:
+    <form class="controls">
+      <div class="control-group">
+        <label for="project-select">Project
           <select id="project-select">
             <option value="otelcol">opentelemetry-collector</option>
             <option value="otelcol-contrib">opentelemetry-collector-contrib</option>
           </select>
         </label>
-        <span id="latest-version" style="color:#6a3fc7;font-weight:bold;"></span>
+        <span id="latest-version"></span>
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.5em;min-width:140px;">
-        <label for="from-version">From Version:
+      <div class="control-group">
+        <label for="from-version">From version
           <select id="from-version"></select>
         </label>
-        <label for="to-version">To Version:
+        <label for="to-version">To version
           <select id="to-version"></select>
         </label>
       </div>
-      <div id="component-picker" style="display:flex;flex-direction:column;gap:0.5em;min-width:280px;">
-        <label for="component-search" id="component-picker-label">Component(s):</label>
+      <div id="component-picker" class="control-group">
+        <label for="component-search" id="component-picker-label">Components</label>
         <input type="text" id="component-search" placeholder="Search components..." autocomplete="off">
         <div id="component-picker-meta">
           <span id="component-count" aria-live="polite"></span>
@@ -55,7 +56,7 @@
         </div>
         <div id="component-list" role="group" aria-labelledby="component-picker-label"></div>
       </div>
-      <button type="button" id="compare-btn" style="height:3.5em;align-self:center;min-width:110px;font-size:1.1em;background:#ececf6;border-radius:8px;border:1px solid #bbb;">Compare</button>
+      <button type="button" id="compare-btn">Compare</button>
     </form>
     <div id="results-toolbar" hidden>
       <label class="toggle-label"><input type="checkbox" id="breaking-only"> Breaking changes only</label>
