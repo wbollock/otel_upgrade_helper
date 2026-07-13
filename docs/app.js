@@ -69,80 +69,20 @@ document.addEventListener('DOMContentLoaded', function() {
         let fuse = null;
 
         // --- Enhanced component mapping with type ---
-        let baseTypeToKeys = {}; // e.g. { 'loki:exporter': ['exporter/lokiexporter'] }
+        // Component keys in release_notes.json and components.json are both
+        // generated from the same canonical "type/base" normalization on the
+        // Go side, so they're guaranteed to agree here without any client-side
+        // typo-fixing or type-guessing.
+        let baseTypeToKeys = {}; // e.g. { 'loki:exporter': ['exporter/loki'] }
         let displayToBaseType = {}; // e.g. { 'loki (exporter)': 'loki:exporter' }
         function getTypeFromKey(key) {
-            let m = key.match(/^(exporters?|receivers?|processors?|extensions?)\//);
-            if (m) {
-                let t = m[1];
-                if (t.endsWith('s')) t = t.slice(0, -1);
-                return t; // exporter, receiver, etc
-            }
-            return 'unknown';
+            const idx = key.indexOf('/');
+            return idx === -1 ? 'unknown' : key.slice(0, idx);
         }
 
         function getBaseName(key) {
-            // Remove type prefix (exporter/, receiver/, etc)
-            let m = key.match(/^(exporters?|receivers?|processors?|extensions?)\/(.+)$/);
-            if (m) {
-                let base = m[2];
-                // If base ends with exporter/receiver/processor/extension, strip it
-                base = base.replace(/(exporter|receiver|processor|extension)$/i, '');
-                return base;
-            }
-            // fallback: just use the part before a slash, or the whole key
-            let base = key.split('/')[0];
-            // Also strip exporter/receiver/processor/extension suffix if present
-            base = base.replace(/(exporter|receiver|processor|extension)$/i, '');
-            return base;
-        }
-
-        // Known type mapping for repo-only components
-        const knownComponentTypes = {
-            // exporters
-            loki: 'exporter',
-            file: 'exporter',
-            otlp: 'receiver',
-            prometheus: 'receiver',
-            jaeger: 'exporter',
-            zipkin: 'exporter',
-            kafka: 'exporter',
-            awsxray: 'exporter',
-            otlphttp: 'exporter',
-            syslog: 'exporter',
-            datadog: 'exporter',
-            sapm: 'exporter',
-            signalfx: 'exporter',
-            splunk_hec: 'exporter',
-            googlecloud: 'exporter',
-            elasticsearch: 'exporter',
-            influxdb: 'exporter',
-            sentry: 'exporter',
-            wavefront: 'exporter',
-            sumologic: 'exporter',
-            clickhouse: 'exporter',
-            kinesis: 'exporter',
-            // receivers
-            filelog: 'receiver',
-            webhookevent: 'receiver',
-            // processors
-            batch: 'processor',
-            memory_limiter: 'processor',
-            filter: 'processor',
-            resource: 'processor',
-            attributes: 'processor',
-            transform: 'processor',
-            // extensions
-            file_storage: 'extension',
-            health_check: 'extension',
-        };
-        function normalizePrometheusBaseType(base, type) {
-            // Normalize typos and unknowns for prometheus receiver
-            const promBases = ['prometheus', 'prometheusreceiver', 'prometheusreciever'];
-            if (promBases.includes(base.toLowerCase()) && (type === 'unknown' || type === 'receiver')) {
-                return { base: 'prometheus', type: 'receiver' };
-            }
-            return { base, type };
+            const idx = key.indexOf('/');
+            return idx === -1 ? key : key.slice(idx + 1);
         }
 
         function updateComponents(keepSelected = true) {
@@ -156,31 +96,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             components.delete("");
-            // Fix common typos in component names
-            const fixed = Array.from(components).map(c => c.replace(/reciver/g, 'receiver'));
             // Build base+type mapping from release notes
             baseTypeToKeys = {};
-            fixed.forEach(c => {
-                let base = getBaseName(c);
-                let type = getTypeFromKey(c);
-                // Normalize prometheus receiver
-                ({ base, type } = normalizePrometheusBaseType(base, type));
+            Array.from(components).forEach(c => {
+                const base = getBaseName(c);
+                const type = getTypeFromKey(c);
                 const key = `${base}:${type}`;
                 if (!baseTypeToKeys[key]) baseTypeToKeys[key] = [];
                 baseTypeToKeys[key].push(c);
             });
             // --- Merge in all components from components.json ---
             allComponentList.forEach(entry => {
-                let base = entry.base;
-                let type = entry.type;
-                if (!base || !type) return;
-                // Normalize prometheus receiver
-                ({ base, type } = normalizePrometheusBaseType(base, type));
-                // Infer type if unknown
-                if (type === 'unknown' && knownComponentTypes[base]) {
-                    type = knownComponentTypes[base];
-                }
-                if (type === 'unknown' || !type) return; // skip still-unknown
+                const base = entry.base;
+                const type = entry.type;
+                if (!base || !type || type === 'unknown') return;
                 const key = `${base}:${type}`;
                 if (!baseTypeToKeys[key]) baseTypeToKeys[key] = [];
                 // Add a synthetic key for display if not present
@@ -257,8 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     let notesFound = false;
                     let notesHtml = '';
                     componentsToShow.forEach(c => {
-                        // Fix typo in display as well
-                        const displayC = c.replace(/reciver/g, 'receiver');
+                        const displayC = c;
                         let notesArr = notesData[c] || [];
                         // Deduplicate notes
                         notesArr = Array.from(new Set(notesArr));
@@ -376,8 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     let notesFound = false;
                     let notesHtml = '';
                     componentsToShow.forEach(c => {
-                        // Fix typo in display as well
-                        const displayC = c.replace(/reciver/g, 'receiver');
+                        const displayC = c;
                         let notesArr = notesData[c] || [];
                         // Deduplicate notes
                         notesArr = Array.from(new Set(notesArr));

@@ -61,7 +61,7 @@ func ParseUpgradeNotes(releaseBody string) map[string][]string {
 		if strings.HasPrefix(trimmed, "- `") {
 			endIdx := strings.Index(trimmed[3:], "`")
 			if endIdx > 0 {
-				currentComponent = correctComponentName(trimmed[3 : 3+endIdx])
+				currentComponent = NormalizeComponent(trimmed[3 : 3+endIdx])
 				note := strings.TrimSpace(trimmed[3+endIdx+1:])
 				if strings.HasPrefix(note, ":") {
 					note = strings.TrimSpace(note[1:])

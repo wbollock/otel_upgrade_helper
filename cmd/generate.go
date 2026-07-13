@@ -50,20 +50,17 @@ func main() {
 	}
 
 	// --- Filter out $-prefixed components from release notes data ---
+	// (compKey is already normalized to canonical "type/base" form by
+	// ParseUpgradeNotes, so the base is simply whatever follows the slash.)
 	for projectName, project := range allData {
 		for version, versionData := range project {
 			filteredVersionData := make(map[string][]string)
 			for compKey, notes := range versionData {
-				// Split on '/'; get base
-				parts := splitAndTrim(compKey, "/")
-				base := ""
-				if len(parts) > 1 {
-					base = parts[1]
-				} else if len(parts) == 1 {
-					base = parts[0]
+				base := compKey
+				if idx := strings.Index(compKey, "/"); idx != -1 {
+					base = compKey[idx+1:]
 				}
-				baseTrimmed := strings.ToLower(strings.TrimSpace(base))
-				if !strings.HasPrefix(baseTrimmed, "$") {
+				if !strings.HasPrefix(strings.ToLower(strings.TrimSpace(base)), "$") {
 					filteredVersionData[compKey] = notes
 				} else {
 					fmt.Fprintf(os.Stderr, "Filtered out release notes for component with base starting with $: %q\n", compKey)
@@ -89,52 +86,27 @@ func main() {
 	fmt.Println("Generated docs/data/release_notes.json")
 
 	// --- Generate components.json from release notes data ---
+	// compKey is already normalized to canonical "type/base" form by
+	// ParseUpgradeNotes, so release_notes.json and components.json are
+	// guaranteed to agree on component identity without re-deriving it here.
 	type Component struct {
 		Base string `json:"base"`
 		Type string `json:"type"`
 	}
 	componentSet := make(map[string]struct{})
 	var components []Component
-	knownTypes := map[string]bool{"exporter": true, "receiver": true, "processor": true, "extension": true, "connector": true}
-	stripSuffixes := []string{"exporter", "receiver", "processor", "extension", "connector"}
 	for _, project := range allData {
 		for _, versionData := range project {
 			for compKey := range versionData {
 				if compKey == "" || compKey == "(general)" {
 					continue
 				}
-				// Split on '/'
-				parts := make([]string, 0)
-				for _, p := range splitAndTrim(compKey, "/") {
-					if p != "" {
-						parts = append(parts, p)
-					}
-				}
 				var ctype, base string
-				if len(parts) > 1 && knownTypes[parts[0]] {
-					ctype = parts[0]
-					// If second part is like lokiexporter, strip exporter suffix
-					base = parts[1]
-					for _, suf := range stripSuffixes {
-						if len(base) > len(suf) && base[len(base)-len(suf):] == suf {
-							base = base[:len(base)-len(suf)]
-						}
-					}
-				} else if len(parts) > 2 && knownTypes[parts[0]] {
-					ctype = parts[0]
-					base = parts[1] // e.g. receiver/loki/prod -> base: loki
-				} else if len(parts) == 1 {
-					// Try to infer type from suffix
-					base = parts[0]
+				if idx := strings.Index(compKey, "/"); idx != -1 {
+					ctype = compKey[:idx]
+					base = compKey[idx+1:]
+				} else {
 					ctype = "unknown"
-					for _, suf := range stripSuffixes {
-						if len(base) > len(suf) && base[len(base)-len(suf):] == suf {
-							ctype = suf
-							base = base[:len(base)-len(suf)]
-						}
-					}
-				}
-				if base == "" {
 					base = compKey
 				}
 
@@ -176,13 +148,4 @@ func main() {
 	}
 	json.NewEncoder(cf).Encode(filteredComponents)
 	fmt.Println("Generated docs/data/components.json from release notes (filtered $ components, trimmed, lowercased check)")
-}
-
-// splitAndTrim splits a string by sep and trims whitespace from each part
-func splitAndTrim(s, sep string) []string {
-	parts := []string{}
-	for _, p := range strings.Split(s, sep) {
-		parts = append(parts, strings.TrimSpace(p))
-	}
-	return parts
 }
