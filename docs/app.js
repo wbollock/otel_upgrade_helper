@@ -243,7 +243,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (params.from) fromVersion.value = params.from;
         if (params.to) toVersion.value = params.to;
         updateComponents();
-        if (params.component) {
+        if (params.component === 'all') {
+            Array.from(componentFilter.options).forEach(opt => { opt.selected = true; });
+        } else if (params.component) {
             // Multi-select support
             const vals = params.component.split(',');
             Array.from(componentFilter.options).forEach(opt => {
@@ -253,11 +255,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // When any select changes, update URL
         function updateUrlFromUI() {
+            const selected = getSelectedComponents();
+            const options = Array.from(componentFilter.options);
+            // Selecting every component can produce a component list many KB
+            // long, which throws "URI too long" from history.replaceState.
+            // Use a compact "all" sentinel instead of serializing every value.
+            const component = (options.length > 0 && selected.length === options.length) ? 'all' : selected.join(',');
             setQueryParams({
                 project: projectSelect.value,
                 from: fromVersion.value,
                 to: toVersion.value,
-                component: getSelectedComponents().join(',')
+                component
             });
         }
         projectSelect.addEventListener('change', () => { updateVersions(); updateLatestVersion(); updateUrlFromUI(); });
