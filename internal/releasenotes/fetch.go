@@ -8,17 +8,26 @@ import (
 )
 
 // FetchReleaseNotes fetches release notes for a given repo (e.g., "open-telemetry/opentelemetry-collector")
-// Returns a map of version -> release body
+// Returns a map of version -> release body, walking every page of releases —
+// the API defaults to a single page of 30, which silently capped the site at
+// the ~30 most recent versions.
 func FetchReleaseNotes(ctx context.Context, client *github.Client, owner, repo string) (map[string]string, error) {
 	notes := make(map[string]string)
-	releases, _, err := client.Repositories.ListReleases(ctx, owner, repo, nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, rel := range releases {
-		if rel.TagName != nil && rel.Body != nil {
-			notes[*rel.TagName] = *rel.Body
+	opts := &github.ListOptions{PerPage: 100}
+	for {
+		releases, resp, err := client.Repositories.ListReleases(ctx, owner, repo, opts)
+		if err != nil {
+			return nil, err
 		}
+		for _, rel := range releases {
+			if rel.TagName != nil && rel.Body != nil {
+				notes[*rel.TagName] = *rel.Body
+			}
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 	return notes, nil
 }

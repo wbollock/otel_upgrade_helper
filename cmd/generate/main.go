@@ -37,9 +37,16 @@ func main() {
 	for _, p := range projects {
 		releases, err := releasenotes.FetchReleaseNotes(ctx, client, p.Owner, p.Repo)
 		if err != nil {
+			// Failing hard beats deploying a silently emptier site (e.g. on
+			// a bad token or rate limiting).
 			fmt.Fprintf(os.Stderr, "Error fetching releases for %s: %v\n", p.Name, err)
-			continue
+			os.Exit(1)
 		}
+		if len(releases) == 0 {
+			fmt.Fprintf(os.Stderr, "No releases returned for %s; refusing to generate an empty site\n", p.Name)
+			os.Exit(1)
+		}
+		fmt.Printf("Fetched %d releases for %s\n", len(releases), p.Name)
 		if allData[p.Name] == nil {
 			allData[p.Name] = make(map[string]map[string][]string)
 		}

@@ -27,6 +27,10 @@ jobs:
 
       - name: Generate static site
         run: go run ./cmd/generate
+        env:
+          # Authenticated requests get 5k req/h instead of 60, which full
+          # release-history pagination needs.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
