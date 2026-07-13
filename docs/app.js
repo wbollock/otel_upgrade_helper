@@ -161,62 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateVersions();
         updateLatestVersion();
 
-        document.getElementById('compare-btn').addEventListener('click', function() {
-            const project = projectSelect.value;
-            const from = fromVersion.value;
-            const to = toVersion.value;
-            const component = componentFilter.value;
-            let results = [];
-            if (data[project]) {
-                // Get all versions between from and to (inclusive, sorted)
-                const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-                const fromIdx = versions.indexOf(from);
-                const toIdx = versions.indexOf(to);
-                if (fromIdx === -1 || toIdx === -1) {
-                    resultsDiv.innerHTML = '<em>Invalid version selection.</em>';
-                    return;
-                }
-                const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
-                const selectedVersions = versions.slice(start, end + 1);
-                // For each version, show notes for the selected component(s)
-                selectedVersions.forEach(ver => {
-                    const notesData = data[project][ver] || {};
-                    let componentsToShow = component === 'all' ? Object.keys(notesData) : [component];
-                    componentsToShow = componentsToShow.filter(c => c && c !== '');
-                    let notesFound = false;
-                    let notesHtml = '';
-                    componentsToShow.forEach(c => {
-                        const displayC = c;
-                        let notesArr = notesData[c] || [];
-                        // Deduplicate notes
-                        notesArr = Array.from(new Set(notesArr));
-                        if (notesArr.length) {
-                            notesFound = true;
-                            // Add GitHub link to component dir
-                            let repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
-                            let compPath = c === '(general)' ? '' : `/tree/main/${c}`;
-                            let compLink = c === '(general)' ? '' : ` <a href='https://github.com/${repo}${compPath}' target='_blank' rel='noopener noreferrer' title='View component source on GitHub' style='font-size:0.95em;margin-left:0.3em;'>🔗</a>`;
-                            notesHtml += `<h4 class=\"component-name\">${displayC}${compLink}</h4><ul class=\"notes-list\">` + notesArr.map(n => `<li>${linkifyPRs(n, project)}</li>`).join('') + '</ul>';
-                        }
-                    });
-                    if (notesFound) {
-                        results.push(`<div class="release-block"><h3 class="version-header">${ver}</h3>${notesHtml}</div>`);
-                    }
-                });
-            }
-            resultsDiv.innerHTML = results.length ? results.join('') : '<em>No upgrade notes found for selection.</em>';
-        });
-
-        // Helper to linkify PR numbers in note text
-        function linkifyPRs(note, project) {
-            // Match #12345 not already inside a link
-            return note.replace(/#(\d{3,7})(?![\w\d]*\])/g, function(match, prNum) {
-                let repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
-                let url = `https://github.com/${repo}/pull/${prNum}`;
-                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${match}</a>`;
-            });
-        }
-
         // --- Update URL logic for multi-select ---
         function getSelectedComponents() {
             return Array.from(componentFilter.selectedOptions).map(o => o.value);
@@ -293,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
                 const selectedVersions = versions.slice(start, end + 1);
                 // For each version, show notes for the selected component(s)
+                const repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
                 selectedVersions.forEach(ver => {
                     const notesData = data[project][ver] || {};
                     let componentsToShow = [];
@@ -319,14 +264,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (notesArr.length) {
                             notesFound = true;
                             // Add GitHub link to component dir
-                            let repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
                             let compPath = c === '(general)' ? '' : `/tree/main/${c}`;
                             let compLink = c === '(general)' ? '' : ` <a href='https://github.com/${repo}${compPath}' target='_blank' rel='noopener noreferrer' title='View component source on GitHub' style='font-size:0.95em;margin-left:0.3em;'>🔗</a>`;
                             notesHtml += `<h4 class=\"component-name\">${displayC}${compLink}</h4><ul class=\"notes-list\">` + notesArr.map(n => `<li>${linkifyPRs(n, project)}</li>`).join('') + '</ul>';
                         }
                     });
                     if (notesFound) {
-                        results.push(`<div class="release-block"><h3 class="version-header">${ver}</h3>${notesHtml}</div>`);
+                        const releaseUrl = `https://github.com/${repo}/releases/tag/${encodeURIComponent(ver)}`;
+                        const releaseLink = ` <a href="${releaseUrl}" target="_blank" rel="noopener noreferrer" title="View the full release notes on GitHub" style="font-size:0.7em;font-weight:normal;margin-left:0.5em;">View full release notes ↗</a>`;
+                        results.push(`<div class="release-block"><h3 class="version-header">${ver}${releaseLink}</h3>${notesHtml}</div>`);
                     }
                 });
             }

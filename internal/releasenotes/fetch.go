@@ -57,8 +57,15 @@ func ParseUpgradeNotes(releaseBody string) map[string][]string {
 	for _, line := range strings.Split(releaseBody, "\n") {
 		line = strings.TrimRight(line, "\r\n")
 		trimmed := strings.TrimSpace(line)
-		// Look for lines like: - `component/name`: ...
-		if strings.HasPrefix(trimmed, "- `") {
+		// A line is only a new top-level entry if it isn't indented. Nested
+		// lines (e.g. a sub-bullet listing an individual metric name in its
+		// own "- `name`: ..." form) must stay attached to the entry they're
+		// nested under, otherwise the parent note gets cut short at the
+		// first sub-bullet and each sub-bullet is mistaken for its own
+		// top-level component.
+		indented := len(line) > 0 && (line[0] == ' ' || line[0] == '\t')
+
+		if !indented && strings.HasPrefix(trimmed, "- `") {
 			endIdx := strings.Index(trimmed[3:], "`")
 			if endIdx > 0 {
 				currentComponent = NormalizeComponent(trimmed[3 : 3+endIdx])
@@ -74,12 +81,9 @@ func ParseUpgradeNotes(releaseBody string) map[string][]string {
 				continue
 			}
 		}
-		// If we hit another component, stop collecting for previous
-		if strings.HasPrefix(trimmed, "- `") {
-			collecting = false
-		}
-		// Collect indented sub-bullets as part of the current component
-		if collecting && (strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t") || (len(line) > 0 && line[0] == ' ')) {
+		// Collect indented lines as part of the current component, no matter
+		// what their own content looks like.
+		if indented && collecting {
 			subNote := strings.TrimSpace(line)
 			subNote = highlightEmojis(subNote)
 			if subNote != "" {
@@ -87,6 +91,10 @@ func ParseUpgradeNotes(releaseBody string) map[string][]string {
 			}
 			continue
 		}
+		if indented {
+			continue
+		}
+		collecting = false
 		// Also collect top-level breaking changes and bugfixes (not tied to a component)
 		if strings.HasPrefix(trimmed, "- ") && !strings.HasPrefix(trimmed, "- `") {
 			note := strings.TrimPrefix(trimmed, "- ")
