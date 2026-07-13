@@ -52,6 +52,46 @@ func inferBaseAndType(raw string) (base, ctype string) {
 	return strings.ToLower(strings.TrimSpace(base)), ctype
 }
 
+// isBareWord reports whether s is a single lowercase alphanumeric token
+// (like "service", "confmap", "mdatagen", "otlp").
+func isBareWord(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if (r < 'a' || r > 'z') && (r < '0' || r > '9') {
+			return false
+		}
+	}
+	return true
+}
+
+// IsComponentLabel reports whether a backticked changelog label plausibly
+// names a component, as opposed to something else in backticks that chloggen
+// flattened to a top-level bullet (metric names, config options, feature
+// gates — e.g. "- `otelcol_exporter_prometheusremotewrite_wal_reads`: ...").
+// Accepted shapes:
+//   - a directory-style path ("receiver/mongodb", "cmd/opampsupervisor",
+//     "pkg/ottl") — the standardized label format,
+//   - a legacy bare name ending in a component-type suffix ("lokiexporter"),
+//   - a plain lowercase word ("all", "service", "confmap", "zpages").
+func IsComponentLabel(raw string) bool {
+	label := strings.TrimSpace(correctComponentName(raw))
+	if label == "" {
+		return false
+	}
+	if strings.Contains(label, "/") {
+		return true
+	}
+	lower := strings.ToLower(label)
+	for _, suf := range componentSuffixes {
+		if len(lower) > len(suf) && strings.HasSuffix(lower, suf) {
+			return true
+		}
+	}
+	return isBareWord(lower)
+}
+
 // NormalizeComponent returns the canonical "type/base" form of a raw
 // changelog component key, so that entries logged inconsistently upstream
 // (e.g. "lokiexporter" and "exporter/loki") collapse to the same key

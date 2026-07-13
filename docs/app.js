@@ -7,11 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('data/release_notes.json').then(res => res.json()),
         fetch('data/components.json').then(res => res.json())
     ]).then(([dataRaw, allComponentList]) => {
-        // Remove any components that start with a '$' (after trimming whitespace) in the UI as well
-        allComponentList = allComponentList.filter(c => !String(c.base || '').trim().startsWith('$'));
-
-        // Use correct structure for release_notes.json
+        // Schema v2: data[project][version] = { date, components: { key: [ {text, type, children} ] } }
         const data = dataRaw.data;
+        const versionEntry = (project, ver) => (data[project] && data[project][ver]) || {};
+        const versionComponents = (project, ver) => versionEntry(project, ver).components || {};
         // Display generated timestamp
         if (dataRaw.generatedAt) {
             const appDiv = document.getElementById('app');
@@ -91,9 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const to = toVersion.value;
             let components = new Set();
             [from, to].forEach(ver => {
-                if (data[project] && data[project][ver]) {
-                    Object.keys(data[project][ver]).forEach(c => components.add(c));
-                }
+                Object.keys(versionComponents(project, ver)).forEach(c => components.add(c));
             });
             components.delete("");
             // Build base+type mapping from release notes
@@ -237,9 +234,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
                 const selectedVersions = versions.slice(start, end + 1);
                 // For each version, show notes for the selected component(s)
-                const repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
+                const repo = repoForProject(project);
                 selectedVersions.forEach(ver => {
-                    const notesData = data[project][ver] || {};
+                    const notesData = versionComponents(project, ver);
                     let componentsToShow = [];
                     if (selectedDisplays.length === 0 || selectedDisplays.includes('all')) {
                         componentsToShow = Object.keys(notesData);
@@ -253,40 +250,88 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         });
                     }
-                    componentsToShow = componentsToShow.filter(c => c && c !== '');
+                    componentsToShow = componentsToShow.filter(c => c && c !== '').sort();
                     let notesFound = false;
                     let notesHtml = '';
                     componentsToShow.forEach(c => {
-                        const displayC = c;
-                        let notesArr = notesData[c] || [];
-                        // Deduplicate notes
-                        notesArr = Array.from(new Set(notesArr));
+                        const notesArr = dedupeNotes(notesData[c] || []);
                         if (notesArr.length) {
                             notesFound = true;
-                            // Add GitHub link to component dir
-                            let compPath = c === '(general)' ? '' : `/tree/main/${c}`;
-                            let compLink = c === '(general)' ? '' : ` <a href='https://github.com/${repo}${compPath}' target='_blank' rel='noopener noreferrer' title='View component source on GitHub' style='font-size:0.95em;margin-left:0.3em;'>🔗</a>`;
-                            notesHtml += `<h4 class=\"component-name\">${displayC}${compLink}</h4><ul class=\"notes-list\">` + notesArr.map(n => `<li>${linkifyPRs(n, project)}</li>`).join('') + '</ul>';
+                            notesHtml += `<h4 class="component-name">${escapeHtml(c)}${componentSourceLink(repo, ver, c)}</h4>`
+                                + `<ul class="notes-list">` + notesArr.map(n => renderNote(n, repo)).join('') + '</ul>';
                         }
                     });
                     if (notesFound) {
+                        const dateStr = versionEntry(project, ver).date;
+                        const dateHtml = dateStr ? `<span class="version-date">${escapeHtml(dateStr)}</span>` : '';
                         const releaseUrl = `https://github.com/${repo}/releases/tag/${encodeURIComponent(ver)}`;
-                        const releaseLink = ` <a href="${releaseUrl}" target="_blank" rel="noopener noreferrer" title="View the full release notes on GitHub" style="font-size:0.7em;font-weight:normal;margin-left:0.5em;">View full release notes ↗</a>`;
-                        results.push(`<div class="release-block"><h3 class="version-header">${ver}${releaseLink}</h3>${notesHtml}</div>`);
+                        const releaseLink = ` <a class="release-link" href="${releaseUrl}" target="_blank" rel="noopener noreferrer" title="View the full release notes on GitHub">View full release notes ↗</a>`;
+                        results.push(`<div class="release-block"><h3 class="version-header">${escapeHtml(ver)} ${dateHtml}${releaseLink}</h3>${notesHtml}</div>`);
                     }
                 });
             }
             resultsDiv.innerHTML = results.length ? results.join('') : '<em>No upgrade notes found for selection.</em>';
         });
 
-        // Helper to linkify PR numbers in note text
-        function linkifyPRs(note, project) {
-            // Match #12345 not already inside a link
-            return note.replace(/#(\d{3,7})(?![\w\d]*\])/g, function(match, prNum) {
-                let repo = project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
-                let url = `https://github.com/${repo}/pull/${prNum}`;
-                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+        // --- Note rendering helpers ---
+        function repoForProject(project) {
+            return project === 'otelcol' ? 'open-telemetry/opentelemetry-collector' : 'open-telemetry/opentelemetry-collector-contrib';
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Escape first, then apply a safe markdown subset: [text](url) links,
+        // `code` spans, and bare #12345 issue/PR references.
+        function formatNoteText(text, repo) {
+            let out = escapeHtml(text);
+            out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                (_, label, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+            out = out.replace(/`([^`]+)`/g, (_, code) => `<code>${code}</code>`);
+            out = out.replace(/(^|[\s(])#(\d{3,7})\b/g,
+                (_, pre, num) => `${pre}<a href="https://github.com/${repo}/issues/${num}" target="_blank" rel="noopener noreferrer">#${num}</a>`);
+            return out;
+        }
+
+        const noteTypeLabels = {
+            breaking: 'BREAKING',
+            deprecation: 'DEPRECATION',
+            new_component: 'NEW',
+            enhancement: 'ENHANCEMENT',
+            bug_fix: 'BUG FIX',
+            known_issue: 'KNOWN ISSUE',
+        };
+
+        function renderNote(note, repo) {
+            const badge = note.type && noteTypeLabels[note.type]
+                ? `<span class="badge badge-${note.type}">${noteTypeLabels[note.type]}</span> ` : '';
+            const children = (note.children && note.children.length)
+                ? `<ul class="note-children">${note.children.map(ch => `<li>${formatNoteText(ch, repo)}</li>`).join('')}</ul>` : '';
+            return `<li class="note note-${note.type || 'other'}">${badge}${formatNoteText(note.text, repo)}${children}</li>`;
+        }
+
+        function dedupeNotes(notes) {
+            const seen = new Set();
+            return notes.filter(n => {
+                const key = `${n.type}|${n.text}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
             });
+        }
+
+        // Upstream directories are "<type>/<base><type>" for pipeline
+        // components (exporter/loki lives at exporter/lokiexporter); other
+        // prefixes (cmd/, pkg/, ...) are literal paths. Link into the tag
+        // being read, not main, so removed/renamed components still resolve.
+        const pipelineTypes = ['receiver', 'exporter', 'processor', 'extension', 'connector'];
+        function componentSourceLink(repo, ver, key) {
+            if (key === '(general)' || !key.includes('/')) return '';
+            const [type, base] = [key.slice(0, key.indexOf('/')), key.slice(key.indexOf('/') + 1)];
+            const dir = pipelineTypes.includes(type) ? `${type}/${base}${type}` : key;
+            const url = `https://github.com/${repo}/tree/${encodeURIComponent(ver)}/${dir}`;
+            return ` <a class="component-link" href="${url}" target="_blank" rel="noopener noreferrer" title="View component source on GitHub" aria-label="View ${escapeHtml(key)} source on GitHub">🔗</a>`;
         }
 
         // --- Dark mode toggle logic ---

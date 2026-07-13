@@ -14,6 +14,22 @@ import (
 	releasenotes "github.com/wbollock/otel-upgrade-helper/internal/releasenotes"
 )
 
+// badComponent reports whether a canonical "type/base" component key is a
+// known-bad parse artifact that should be excluded from the site.
+func badComponent(compKey string) bool {
+	base := compKey
+	if idx := strings.Index(compKey, "/"); idx != -1 {
+		base = compKey[idx+1:]
+	}
+	base = strings.ToLower(strings.TrimSpace(base))
+	return strings.HasPrefix(base, "$") ||
+		strings.Contains(base, ",") ||
+		base == "processor" ||
+		base == "connector" ||
+		base == "exporter" ||
+		strings.HasPrefix(base, "git.repository")
+}
+
 func main() {
 	fmt.Println("OpenTelemetry Collector Release Notes Comparator Static Site Generator")
 
@@ -35,7 +51,7 @@ func main() {
 
 	allData := make(releasenotes.ReleaseNotesData)
 	for _, p := range projects {
-		releases, err := releasenotes.FetchReleaseNotes(ctx, client, p.Owner, p.Repo)
+		releases, err := releasenotes.FetchReleases(ctx, client, p.Owner, p.Repo)
 		if err != nil {
 			// Failing hard beats deploying a silently emptier site (e.g. on
 			// a bad token or rate limiting).
@@ -47,33 +63,21 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Fetched %d releases for %s\n", len(releases), p.Name)
-		if allData[p.Name] == nil {
-			allData[p.Name] = make(map[string]map[string][]string)
-		}
-		for version, body := range releases {
-			parsed := releasenotes.ParseUpgradeNotes(body)
-			allData[p.Name][version] = parsed
-		}
-	}
-
-	// --- Filter out $-prefixed components from release notes data ---
-	// (compKey is already normalized to canonical "type/base" form by
-	// ParseUpgradeNotes, so the base is simply whatever follows the slash.)
-	for projectName, project := range allData {
-		for version, versionData := range project {
-			filteredVersionData := make(map[string][]string)
-			for compKey, notes := range versionData {
-				base := compKey
-				if idx := strings.Index(compKey, "/"); idx != -1 {
-					base = compKey[idx+1:]
+		allData[p.Name] = make(map[string]releasenotes.VersionNotes)
+		for version, rel := range releases {
+			parsed := releasenotes.ParseUpgradeNotes(rel.Body)
+			components := make(map[string][]releasenotes.Note, len(parsed))
+			for compKey, notes := range parsed {
+				if compKey != "(general)" && compKey != "" && badComponent(compKey) {
+					fmt.Fprintf(os.Stderr, "Filtered out known-bad component: %q\n", compKey)
+					continue
 				}
-				if !strings.HasPrefix(strings.ToLower(strings.TrimSpace(base)), "$") {
-					filteredVersionData[compKey] = notes
-				} else {
-					fmt.Fprintf(os.Stderr, "Filtered out release notes for component with base starting with $: %q\n", compKey)
-				}
+				components[compKey] = notes
 			}
-			allData[projectName][version] = filteredVersionData
+			allData[p.Name][version] = releasenotes.VersionNotes{
+				Date:       rel.Date,
+				Components: components,
+			}
 		}
 	}
 
@@ -85,17 +89,20 @@ func main() {
 	defer f.Close()
 
 	wrapper := releasenotes.ReleaseNotesWrapper{
-		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
-		Data:        allData,
+		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
+		SchemaVersion: 2,
+		Data:          allData,
 	}
 
-	json.NewEncoder(f).Encode(wrapper)
+	if err := json.NewEncoder(f).Encode(wrapper); err != nil {
+		panic(err)
+	}
 	fmt.Println("Generated docs/data/release_notes.json")
 
 	// --- Generate components.json from release notes data ---
-	// compKey is already normalized to canonical "type/base" form by
-	// ParseUpgradeNotes, so release_notes.json and components.json are
-	// guaranteed to agree on component identity without re-deriving it here.
+	// Component keys are already normalized to canonical "type/base" form by
+	// ParseUpgradeNotes and filtered above, so release_notes.json and
+	// components.json are guaranteed to agree on component identity.
 	type Component struct {
 		Base string `json:"base"`
 		Type string `json:"type"`
@@ -104,31 +111,15 @@ func main() {
 	var components []Component
 	for _, project := range allData {
 		for _, versionData := range project {
-			for compKey := range versionData {
+			for compKey := range versionData.Components {
 				if compKey == "" || compKey == "(general)" {
 					continue
 				}
-				var ctype, base string
+				ctype, base := "unknown", compKey
 				if idx := strings.Index(compKey, "/"); idx != -1 {
 					ctype = compKey[:idx]
 					base = compKey[idx+1:]
-				} else {
-					ctype = "unknown"
-					base = compKey
 				}
-
-				// Filter out known-bad components
-				baseTrimmed := strings.ToLower(strings.TrimSpace(base))
-				if strings.HasSuffix(baseTrimmed, ",") ||
-					strings.Contains(baseTrimmed, ",") ||
-					baseTrimmed == "processor" ||
-					baseTrimmed == "connector" ||
-					baseTrimmed == "exporter" ||
-					strings.HasPrefix(baseTrimmed, "git.repository") {
-					fmt.Fprintf(os.Stderr, "Filtered out known-bad component: %q (base: %q)\n", compKey, base)
-					continue
-				}
-
 				key := base + ":" + ctype
 				if _, exists := componentSet[key]; !exists {
 					components = append(components, Component{Base: base, Type: ctype})
@@ -142,17 +133,8 @@ func main() {
 		panic(err)
 	}
 	defer cf.Close()
-
-	// Remove any components that start with a '$' (after trimming whitespace and lowercasing) before writing to JSON
-	filteredComponents := make([]Component, 0, len(components))
-	for _, c := range components {
-		baseTrimmed := strings.ToLower(strings.TrimSpace(c.Base))
-		if !strings.HasPrefix(baseTrimmed, "$") {
-			filteredComponents = append(filteredComponents, c)
-		} else {
-			fmt.Fprintf(os.Stderr, "Filtered out component with base starting with $: %q\n", c.Base)
-		}
+	if err := json.NewEncoder(cf).Encode(components); err != nil {
+		panic(err)
 	}
-	json.NewEncoder(cf).Encode(filteredComponents)
-	fmt.Println("Generated docs/data/components.json from release notes (filtered $ components, trimmed, lowercased check)")
+	fmt.Println("Generated docs/data/components.json")
 }
