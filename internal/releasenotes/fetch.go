@@ -2,7 +2,6 @@ package releasenotes
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v50/github"
@@ -18,8 +17,6 @@ func FetchReleaseNotes(ctx context.Context, client *github.Client, owner, repo s
 	}
 	for _, rel := range releases {
 		if rel.TagName != nil && rel.Body != nil {
-			// Log the tag and first 300 chars of the body for debugging
-			fmt.Printf("\n==== %s ===\n%s\n", *rel.TagName, (*rel.Body)[:min(300, len(*rel.Body))])
 			notes[*rel.TagName] = *rel.Body
 		}
 	}
@@ -119,10 +116,3 @@ func highlightEmojis(note string) string {
 	return note
 }
 
-// min returns the smaller of two ints
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
