@@ -49,5 +49,9 @@ jobs:
           git add .github/last-generated.txt
           if ! git diff --cached --quiet; then
             git commit -m "chore: record release notes generation run [skip ci]"
-            git push
+            for i in 1 2 3; do
+              git push && break
+              git fetch origin main
+              git rebase origin/main
+            done
           fi
