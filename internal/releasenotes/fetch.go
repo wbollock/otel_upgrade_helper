@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/go-github/v50/github"
+	"github.com/google/go-github/v89/github"
 )
 
 // FetchReleases fetches releases for a given repo (e.g., "open-telemetry/opentelemetry-collector").
@@ -20,14 +20,14 @@ func FetchReleases(ctx context.Context, client *github.Client, owner, repo strin
 			return nil, err
 		}
 		for _, rel := range page {
-			if rel.TagName == nil || rel.Body == nil {
+			if rel.GetTagName() == "" || rel.GetBody() == "" {
 				continue
 			}
-			r := Release{Body: *rel.Body}
-			if rel.PublishedAt != nil {
-				r.Date = rel.PublishedAt.Format("2006-01-02")
+			r := Release{Body: rel.GetBody()}
+			if ts := rel.GetPublishedAt(); !ts.IsZero() {
+				r.Date = ts.Format("2006-01-02")
 			}
-			releases[*rel.TagName] = r
+			releases[rel.GetTagName()] = r
 		}
 		if resp.NextPage == 0 {
 			break

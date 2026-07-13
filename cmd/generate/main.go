@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v50/github"
-	"golang.org/x/oauth2"
+	"github.com/google/go-github/v89/github"
 
 	releasenotes "github.com/wbollock/otel-upgrade-helper/internal/releasenotes"
 )
@@ -34,10 +33,14 @@ func main() {
 	fmt.Println("OpenTelemetry Collector Release Notes Comparator Static Site Generator")
 
 	ctx := context.Background()
-	client := github.NewClient(nil)
+	var clientOpts []github.ClientOptionsFunc
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-		client = github.NewClient(oauth2.NewClient(ctx, ts))
+		clientOpts = append(clientOpts, github.WithAuthToken(token))
+	}
+	client, err := github.NewClient(clientOpts...)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating GitHub client: %v\n", err)
+		os.Exit(1)
 	}
 
 	projects := []struct {
