@@ -30,11 +30,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const resultsDiv = document.getElementById('results');
         const latestVersionSpan = document.getElementById('latest-version');
 
+        // Versions of a project, ascending (oldest first)
+        function sortedVersions(project) {
+            return Object.keys(data[project] || {})
+                .filter(v => !v.startsWith('cmd/'))
+                .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        }
+
+        function versionOption(project, v) {
+            const d = versionEntry(project, v).date;
+            return `<option value="${v}">${v}${d ? ' — ' + d : ''}</option>`;
+        }
+
         function updateVersions() {
             const project = projectSelect.value;
-            const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'})).reverse();
-            fromVersion.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
-            toVersion.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
+            const versions = sortedVersions(project).reverse();
+            fromVersion.innerHTML = versions.map(v => versionOption(project, v)).join('');
+            toVersion.innerHTML = versions.map(v => versionOption(project, v)).join('');
             // Start from version about 10 versions back, or first if less
             if (versions.length > 0) {
                 fromVersion.value = versions[Math.min(10, versions.length-1)];
@@ -44,13 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function updateLatestVersion() {
-            const project = projectSelect.value;
-            const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'})).reverse();
-            if (versions.length > 0) {
-                latestVersionSpan.textContent = `Latest: ${versions[0]}`;
-            } else {
-                latestVersionSpan.textContent = '';
-            }
+            const versions = sortedVersions(projectSelect.value);
+            latestVersionSpan.textContent = versions.length ? `Latest: ${versions[versions.length - 1]}` : '';
         }
 
         // --- Component search and multi-select ---
@@ -221,63 +228,117 @@ document.addEventListener('DOMContentLoaded', function() {
             renderComponentList();
         }
 
-        // Also update URL on compare
-        document.getElementById('compare-btn').addEventListener('click', function() {
+        // --- Comparison ---
+        const resultsToolbar = document.getElementById('results-toolbar');
+        const breakingOnly = document.getElementById('breaking-only');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const copyLinkStatus = document.getElementById('copy-link-status');
+
+        function runComparison() {
             updateUrlFromUI();
             const project = projectSelect.value;
-            const from = fromVersion.value;
-            const to = toVersion.value;
             const selectedDisplays = getSelectedComponents();
-            let results = [];
-            if (data[project]) {
-                // Get all versions between from and to (inclusive, sorted)
-                const versions = Object.keys(data[project] || {}).filter(v => !v.startsWith('cmd/')).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-                const fromIdx = versions.indexOf(from);
-                const toIdx = versions.indexOf(to);
-                if (fromIdx === -1 || toIdx === -1) {
-                    resultsDiv.innerHTML = '<em>Invalid version selection.</em>';
-                    return;
-                }
-                const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
-                const selectedVersions = versions.slice(start, end + 1);
-                // For each version, show notes for the selected component(s)
-                const repo = repoForProject(project);
-                selectedVersions.forEach(ver => {
-                    const notesData = versionComponents(project, ver);
-                    let componentsToShow = [];
-                    if (selectedDisplays.length === 0) {
-                        componentsToShow = Object.keys(notesData);
-                    } else {
-                        selectedDisplays.forEach(display => {
-                            const baseType = displayToBaseType[display];
-                            if (baseTypeToKeys[baseType]) {
-                                baseTypeToKeys[baseType].forEach(k => {
-                                    if (!componentsToShow.includes(k)) componentsToShow.push(k);
-                                });
-                            }
-                        });
-                    }
-                    componentsToShow = componentsToShow.filter(c => c && c !== '').sort();
-                    let notesFound = false;
-                    let notesHtml = '';
-                    componentsToShow.forEach(c => {
-                        const notesArr = dedupeNotes(notesData[c] || []);
-                        if (notesArr.length) {
-                            notesFound = true;
-                            notesHtml += `<h4 class="component-name">${escapeHtml(c)}${componentSourceLink(repo, ver, c)}</h4>`
-                                + `<ul class="notes-list">` + notesArr.map(n => renderNote(n, repo)).join('') + '</ul>';
+            const onlyBreaking = breakingOnly.checked;
+            const repo = repoForProject(project);
+            const versions = sortedVersions(project);
+            const fromIdx = versions.indexOf(fromVersion.value);
+            const toIdx = versions.indexOf(toVersion.value);
+            if (fromIdx === -1 || toIdx === -1) {
+                resultsDiv.innerHTML = '<em>Invalid version selection.</em>';
+                return;
+            }
+            const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+            const selectedVersions = versions.slice(start, end + 1);
+            const rangeFrom = versions[start], rangeTo = versions[end];
+
+            const typeCounts = {};
+            const blocks = [];
+            selectedVersions.forEach(ver => {
+                const notesData = versionComponents(project, ver);
+                let componentsToShow = [];
+                if (selectedDisplays.length === 0) {
+                    componentsToShow = Object.keys(notesData);
+                } else {
+                    selectedDisplays.forEach(display => {
+                        const baseType = displayToBaseType[display];
+                        if (baseTypeToKeys[baseType]) {
+                            baseTypeToKeys[baseType].forEach(k => {
+                                if (!componentsToShow.includes(k)) componentsToShow.push(k);
+                            });
                         }
                     });
-                    if (notesFound) {
-                        const dateStr = versionEntry(project, ver).date;
-                        const dateHtml = dateStr ? `<span class="version-date">${escapeHtml(dateStr)}</span>` : '';
-                        const releaseUrl = `https://github.com/${repo}/releases/tag/${encodeURIComponent(ver)}`;
-                        const releaseLink = ` <a class="release-link" href="${releaseUrl}" target="_blank" rel="noopener noreferrer" title="View the full release notes on GitHub">View full release notes ↗</a>`;
-                        results.push(`<div class="release-block"><h3 class="version-header">${escapeHtml(ver)} ${dateHtml}${releaseLink}</h3>${notesHtml}</div>`);
-                    }
+                }
+                componentsToShow = componentsToShow.filter(c => c && c !== '').sort();
+                let notesHtml = '';
+                let hasBreaking = false;
+                componentsToShow.forEach(c => {
+                    let notesArr = dedupeNotes(notesData[c] || []);
+                    if (onlyBreaking) notesArr = notesArr.filter(n => n.type === 'breaking');
+                    if (!notesArr.length) return;
+                    notesArr.forEach(n => {
+                        const t = n.type || 'other';
+                        typeCounts[t] = (typeCounts[t] || 0) + 1;
+                        if (t === 'breaking') hasBreaking = true;
+                    });
+                    notesHtml += `<h4 class="component-name">${escapeHtml(c)}${componentSourceLink(repo, ver, c)}</h4>`
+                        + `<ul class="notes-list">` + notesArr.map(n => renderNote(n, repo)).join('') + '</ul>';
                 });
+                if (notesHtml) {
+                    const dateStr = versionEntry(project, ver).date;
+                    const dateHtml = dateStr ? `<span class="version-date">${escapeHtml(dateStr)}</span>` : '';
+                    const releaseUrl = `https://github.com/${repo}/releases/tag/${encodeURIComponent(ver)}`;
+                    const releaseLink = ` <a class="release-link" href="${releaseUrl}" target="_blank" rel="noopener noreferrer" title="View the full release notes on GitHub">View full release notes ↗</a>`;
+                    // Versions with breaking changes start expanded; the rest
+                    // start collapsed unless the range is short.
+                    const open = (hasBreaking || selectedVersions.length <= 3) ? ' open' : '';
+                    blocks.push(`<details class="release-block"${open}><summary class="version-summary">`
+                        + `<span class="version-header">${escapeHtml(ver)}</span> ${dateHtml}${releaseLink}</summary>${notesHtml}</details>`);
+                }
+            });
+
+            // Summary header: how scary is this upgrade, at a glance
+            const summaryBits = [];
+            if (typeCounts.breaking) summaryBits.push(`<strong class="summary-breaking">${typeCounts.breaking} breaking</strong>`);
+            if (typeCounts.deprecation) summaryBits.push(`${typeCounts.deprecation} deprecation${typeCounts.deprecation === 1 ? '' : 's'}`);
+            if (typeCounts.bug_fix) summaryBits.push(`${typeCounts.bug_fix} bug fix${typeCounts.bug_fix === 1 ? '' : 'es'}`);
+            if (typeCounts.enhancement) summaryBits.push(`${typeCounts.enhancement} enhancement${typeCounts.enhancement === 1 ? '' : 's'}`);
+            if (typeCounts.new_component) summaryBits.push(`${typeCounts.new_component} new component${typeCounts.new_component === 1 ? '' : 's'}`);
+            const scope = selectedDisplays.length
+                ? `${selectedDisplays.length} selected component${selectedDisplays.length === 1 ? '' : 's'}`
+                : 'all components';
+            const summary = `<div class="results-summary">${escapeHtml(rangeFrom)} → ${escapeHtml(rangeTo)}: `
+                + `${blocks.length} of ${selectedVersions.length} versions have changes for ${scope}`
+                + (summaryBits.length ? ` — ${summaryBits.join(', ')}` : '')
+                + (onlyBreaking ? ' <em>(breaking only)</em>' : '')
+                + `</div>`;
+
+            let body;
+            if (blocks.length) {
+                body = blocks.join('');
+            } else if (onlyBreaking) {
+                body = '<em>No breaking changes in this range for your selection 🎉</em>';
+            } else if (selectedDisplays.length) {
+                body = `<em>No upgrade notes for your selected components between ${escapeHtml(rangeFrom)} and ${escapeHtml(rangeTo)} — should be a quiet upgrade 🎉</em>`;
+            } else {
+                body = '<em>No upgrade notes found in this range.</em>';
             }
-            resultsDiv.innerHTML = results.length ? results.join('') : '<em>No upgrade notes found for selection.</em>';
+            resultsDiv.innerHTML = summary + body;
+            resultsToolbar.hidden = false;
+        }
+
+        document.getElementById('compare-btn').addEventListener('click', runComparison);
+        breakingOnly.addEventListener('change', () => { if (!resultsToolbar.hidden) runComparison(); });
+        copyLinkBtn.addEventListener('click', () => {
+            const url = window.location.href;
+            const done = () => {
+                copyLinkStatus.textContent = 'Copied!';
+                setTimeout(() => { copyLinkStatus.textContent = ''; }, 2000);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(done, () => { copyLinkStatus.textContent = url; });
+            } else {
+                copyLinkStatus.textContent = url;
+            }
         });
 
         // --- Note rendering helpers ---
@@ -444,5 +505,16 @@ document.addEventListener('DOMContentLoaded', function() {
             updateUrlFromUI();
             detectStatus.textContent = matched.length ? `Selected: ${matched.join(', ')}` : 'No components detected.';
         });
+
+        // Shared URLs land directly on results; otherwise show a hint.
+        if (params.from || params.to || params.component) {
+            runComparison();
+        } else {
+            resultsDiv.innerHTML = '<em>Choose versions and components, then press Compare.</em>';
+        }
+    }).catch(err => {
+        console.error('Failed to load release data:', err);
+        document.getElementById('results').innerHTML =
+            '<strong>Failed to load release notes data.</strong> Try reloading the page; if it persists, the data files may be missing from the deployment.';
     });
 });

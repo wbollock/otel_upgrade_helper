@@ -466,6 +466,64 @@ body.dark .notes-list code {
     background: rgba(201, 195, 255, 0.15);
 }
 
+/* Results toolbar and summary */
+#results-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1.2em;
+    margin-top: 1.5rem;
+}
+#results-toolbar[hidden] { display: none; }
+.toggle-label {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4em;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+#copy-link-btn {
+    margin-top: 0;
+    padding: 0.25em 0.8em;
+    font-size: 0.9em;
+}
+#copy-link-status {
+    font-size: 0.85em;
+    color: var(--primary-color);
+}
+.results-summary {
+    font-size: 1.02em;
+    margin-bottom: 1.1em;
+    padding: 0.6em 0.9em;
+    background: rgba(106, 63, 199, 0.07);
+    border-radius: 6px;
+}
+body.dark .results-summary {
+    background: rgba(201, 195, 255, 0.10);
+}
+.summary-breaking {
+    color: #b91c1c;
+}
+body.dark .summary-breaking {
+    color: #fca5a5 !important;
+}
+
+/* Collapsible release blocks */
+.release-block > summary {
+    cursor: pointer;
+    list-style-position: outside;
+}
+.release-block > summary:hover .version-header {
+    color: var(--primary-color);
+}
+.version-summary .version-header {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #3a3a3a;
+}
+body.dark .version-summary .version-header {
+    color: var(--primary-light) !important;
+}
+
 /* Version header extras */
 .version-date {
     font-size: 0.75em;

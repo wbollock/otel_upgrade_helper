@@ -57,7 +57,12 @@
       </div>
       <button type="button" id="compare-btn" style="height:3.5em;align-self:center;min-width:110px;font-size:1.1em;background:#ececf6;border-radius:8px;border:1px solid #bbb;">Compare</button>
     </form>
-    <div id="results"></div>
+    <div id="results-toolbar" hidden>
+      <label class="toggle-label"><input type="checkbox" id="breaking-only"> Breaking changes only</label>
+      <button type="button" id="copy-link-btn" title="Copy a shareable link to this comparison">Copy link</button>
+      <span id="copy-link-status" aria-live="polite"></span>
+    </div>
+    <div id="results" aria-live="polite"><em>Loading release data…</em></div>
   </div>
   <script src="app.js?v=20250627"></script>
 </body>
