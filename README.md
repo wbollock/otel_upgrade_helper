@@ -12,7 +12,7 @@ This project generates a static webapp (for GitHub Pages) that allows users to c
 
 ## Usage
 
-1. Run `go run ./cmd/generate.go` to generate the static site.
+1. Run `go run ./cmd/generate` to generate the static site.
 2. Commit and push the `docs/` directory to your repository.
 3. Enable GitHub Pages for the `docs/` directory.
 4. A GitHub workflow will update the release notes daily.
@@ -22,8 +22,8 @@ This project generates a static webapp (for GitHub Pages) that allows users to c
 To preview the static website locally:
 
 ```sh
-go run ./cmd/generate.go
-go run ./cmd/serve.go
+go run ./cmd/generate
+go run ./cmd/serve
 ```
 
 ## GitHub Pages Setup
@@ -46,8 +46,8 @@ This project is ready to deploy as a static site using GitHub Pages.
    You can still run locally:
 
    ```sh
-   go run ./cmd/generate.go
-   go run ./cmd/serve.go
+   go run ./cmd/generate
+   go run ./cmd/serve
    ```
 
 4. **Visit your site**  

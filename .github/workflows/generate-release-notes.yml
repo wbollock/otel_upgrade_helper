@@ -26,7 +26,7 @@ jobs:
           go-version: '1.24'
 
       - name: Generate static site
-        run: go run ./cmd/generate.go
+        run: go run ./cmd/generate
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3

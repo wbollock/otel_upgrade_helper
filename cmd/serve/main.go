@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-// duplicate main is fine as this is just a web server entry
 func main() {
 	fs := http.FileServer(http.Dir("docs"))
 	http.Handle("/", fs)
